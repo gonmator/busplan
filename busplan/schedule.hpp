@@ -24,13 +24,23 @@ public:
     }
 
     TimeLine getStopTimes(size_t stopIndex) const {
-        assert(stopIndex < stopCount_);
+        if (stopIndex >= stopCount_) {
+            throw std::out_of_range{"stop index out of range in schedule"};
+        }
 
         TimeLine    rv;
         for (size_t i = 0; i < timeLinesCount_; ++i) {
             rv.push_back(timeTable_[i * stopCount_ + stopIndex]);
         }
         return rv;
+    }
+
+    Time getTime(size_t timelineIx, size_t stopIx) const {
+        assert(timelineIx < timeLinesCount_);
+        assert(stopIx < stopCount_);
+        assert(timeTable_.size() == stopCount_ * timeLinesCount_);
+
+        return timeTable_[timelineIx * stopCount_ + stopIx];
     }
 
 private:

@@ -3,6 +3,7 @@
 #define TIME_HPP
 
 #include <chrono>
+#include <istream>
 #include <ratio>
 #include <string>
 
@@ -27,11 +28,19 @@ using DifTime = Time::duration;
 
 const Time  minusInf{std::chrono::hours{-24}};
 
-inline DifTime toDifTime(const std::string& str) {
-    auto    colonp = str.find(':');
-    auto    h = std::stoul(str.substr(0, colonp));
-    auto    m = std::stoul(str.substr(colonp + 1, str.size() - colonp - 1));
-    return std::chrono::hours{h} + std::chrono::minutes{m};
+inline DifTime toDifTime(std::string str) {
+    unsigned long   m = 0;
+    auto            colonp = str.find(':');
+    if (colonp != str.npos) {
+        m = std::stoul(str.substr(0, colonp)) * 60;
+        str.erase(0, colonp + 1);
+    }
+    m += std::stoul(str);
+    return std::chrono::minutes{m};
+}
+
+inline DifTime toDifTime(size_t m) {
+    return std::chrono::minutes(m);
 }
 
 inline Time toTime(const std::string& str) {
@@ -45,7 +54,7 @@ inline std::string toString(Time t) {
     static const char dec[] = "0123456789";
     std::string rv;
     auto        dur = t.time_since_epoch();
-    auto        h = std::chrono::duration_cast<std::chrono::hours>(dur);
+    auto        h = std::chrono::duration_cast<std::chrono::hours>(dur) % 24;
     auto        m = dur - h;
 
     if (h.count() < 10) {
@@ -64,5 +73,11 @@ inline std::string toString(Time t) {
     return rv;
 }
 
+inline std::istream& operator>>(std::istream& is, Time& t) {
+    std::string ts;
+    is >> ts;
+    t = toTime(ts);
+    return is;
+}
 
 #endif // TIME_LINE_HPP

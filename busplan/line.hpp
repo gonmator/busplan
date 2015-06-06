@@ -16,9 +16,11 @@ using StepsRoutes = std::vector<StepsByRoute>;
 
 class Line {
 public:
-
     Route& addRoute(const std::string& rstr) {
         return routes_[rstr];
+    }
+    void removeRoute(const std::string& rstr) {
+        routes_.erase(routes_.find(rstr));
     }
 
     RouteNames getRouteNames() const {
@@ -27,31 +29,18 @@ public:
     std::string getPlatform(const RouteName& routen, const Stop& stop) const {
         return routes_.at(routen).getPlatform(stop);
     }
-    StopSet getStopSet() const {
-        StopSet rv;
-        for (const auto& routep: routes_) {
-            const auto& rstops = routep.second.stops();
-            rv.insert(rstops.cbegin(), rstops.cend());
-        }
-        return rv;
-    }
-    StepsRoutes getForwardStepsRoutes() const {
-        StepsRoutes rv;
-        for (const auto& routep: routes_) {
-            rv.emplace_back(routep.first, std::move(routep.second.getForwardSteps()));
-        }
-        return rv;
-    }
-    StepsRoutes getBackwardStepsRoutes() const {
-        StepsRoutes rv;
-        for (const auto& routep: routes_) {
-            rv.emplace_back(routep.first, std::move(routep.second.getBackwardSteps()));
-        }
-        return rv;
-    }
-
-    TimeLine getStopTimes(Route::Day day, const RouteName& routen, const Stop& stop) const {
+    StopSet getStopSet() const;
+    StepsRoutes getForwardStepsRoutes() const;
+    StepsRoutes getBackwardStepsRoutes() const;
+    TimeLine getStopTimes(Day day, const RouteName& routen, const Stop& stop) const {
         return routes_.at(routen).getStopTimes(day, stop);
+    }
+    TimeLine getStopTimes(Day day, const Stop& stop) const;
+    Time getArriveTime(Day day, const RouteName& routen, const Stop& from, Time leave, const Stop& to) const {
+        return routes_.at(routen).getArriveTime(day, from, leave, to);
+    }
+    std::string getRouteDescription(const RouteName& routen) const {
+        return routes_.at(routen).description();
     }
 
 private:

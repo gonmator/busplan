@@ -1,5 +1,5 @@
 #include <cassert>
-// #include <iostream>
+#include <iostream>
 #include <string>
 
 #include "config.hpp"
@@ -9,9 +9,20 @@
 
 void read(const Utility::IniDoc::Doc&, const std::string&, Line&);
 void read(const Utility::IniDoc::Doc&, const std::string&, Route&);
-void read(const Utility::IniDoc::Doc&, const std::string&, size_t, DifTimeLines&dtlines);
+void read(const Utility::IniDoc::Doc&, const std::string&, DifTimeLines&dtlines);
 void read(const Utility::IniDoc::Doc&, const std::string&, size_t, const DifTimeLines&, Schedule&);
 void read(const Utility::IniDoc::Doc& cfg, WalkingTimes& wt);
+
+inline std::string strip(std::string str) {
+    char    c = ' ';
+    auto    p0 = str.find_first_not_of(c);
+    auto    p1 = str.find_last_not_of(c);
+    if (p1 != str.npos) {
+        str.erase(p1 + 1);
+    }
+    str.erase(0, p0);
+    return str;
+}
 
 void read(const Utility::IniDoc::Doc &cfg, Lines& lines, StopDescriptions& sds) {
     const auto& ssection = cfg.at("stops");
@@ -21,7 +32,6 @@ void read(const Utility::IniDoc::Doc &cfg, Lines& lines, StopDescriptions& sds) 
             std::piecewise_construct,
             std::forward_as_tuple(sline.first),
             std::forward_as_tuple(sdlist.cbegin(), sdlist.cend()));
-        StopDescription sd;
     }
 
     const auto& lineslist = cfg.at("").at("lines").items();
@@ -29,7 +39,12 @@ void read(const Utility::IniDoc::Doc &cfg, Lines& lines, StopDescriptions& sds) 
 //        std::cout << "Line: " << lstr << std::endl;
 
         auto&   line = lines.addLine(lstr);
-        read(cfg, lstr, line);
+        try {
+            read(cfg, lstr, line);
+        } catch (const std::out_of_range&) {
+            std::cerr << "Error in line: " << lstr << std::endl;
+            lines.removeLine(lstr);
+        }
     }
 
     read(cfg, lines.walkingTimes());
@@ -41,15 +56,22 @@ void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Line& line)
 //        std::cout << "    Route: " << rstr << std::endl;
 
         auto&   route = line.addRoute(rstr);
-        read(cfg, sname + "." + rstr, route);
+        try {
+            read(cfg, sname + "." + rstr, route);
+        } catch (const std::out_of_range&) {
+            std::cerr << "Error in route: " << rstr << " (" << sname << ")" << std::endl;
+            line.removeRoute(rstr);
+        }
     }
 }
 
 void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Route& route) {
+    route.setDescription(cfg.at(sname).at("description").string());
+
 //    std::cout << "        Stops: " << cfg.at(sname).at("stops").string() << std::endl;
     const auto& stoplist = cfg.at(sname).at("stops").items();
     for (const auto& sstr: stoplist) {
-        route.addStop(sstr);
+        route.addStop(strip(sstr));
     }
 
 //    std::cout << "        Platforms: " << std::endl;
@@ -62,20 +84,31 @@ void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Route& rout
     }
 
     DifTimeLines    dtimeLines;
-    read(cfg, sname + ".times", stoplist.size(), dtimeLines);
+    read(cfg, sname + ".durations", dtimeLines);
 
-//    std::cout << "        Schedule Monday to Friday: " << std::endl;
-    read(cfg, sname + ".times.MonToFri", stoplist.size(), dtimeLines, route.monToFri());
-
-//    std::cout << "        Schedule Saturday: " << std::endl;
-    read(cfg, sname + ".times.Sat", stoplist.size(), dtimeLines, route.sat());
-
-//    std::cout << "        Schedule Sunday: " << std::endl;
-    read(cfg, sname + ".times.Sun", stoplist.size(), dtimeLines, route.sun());
+    Day day{};
+    const auto& timetables = cfg.at(sname).at("timetables").items();
+    for (auto day: week) {
+        auto&   schedule = route.schedule(day);
+        schedule.setStopCount(stoplist.size());
+        if (day >= timetables.size()) {
+            std::cerr << "Missing day " << day << " (" << sname << ")" << std::endl;
+            continue;
+        }
+        const auto& ttstr = timetables[day];
+        if (ttstr.empty()) {
+            continue;
+        }
+        try {
+            read(cfg, sname + "." + ttstr, stoplist.size(), dtimeLines, route.schedule(day));
+        } catch (const std::out_of_range&) {
+            std::cerr << "Error in day: " << day << "(" << sname << ")" << std::endl;
+        }
+    }
 }
 
 void read(
-    const Utility::IniDoc::Doc& cfg, const std::string& sname, size_t stopCount, DifTimeLines& dtlines) {
+    const Utility::IniDoc::Doc& cfg, const std::string& sname, DifTimeLines& dtlines) {
 //    std::cout << "        Time lines:" << std::endl;
     if (!cfg.count(sname)) {
         return;
@@ -85,15 +118,8 @@ void read(
 //        std::cout << "            " << tlprop.first << " -> " << tlprop.second.string() << std::endl;
 
         DifTimeLine&   dtline = dtlines[tlprop.first];
-        dtline.assign(stopCount, toDifTime("23:59"));
-        size_t      i = 0;
         for (const auto& dtstr: tlprop.second.items()) {
-            if (dtstr.empty()) {
-                dtline[i] = -dtline[i];
-            } else {
-                dtline[i] = toDifTime(dtstr);
-            }
-            ++i;
+            dtline.push_back(toDifTime(dtstr));
         }
     }
 }
@@ -109,35 +135,21 @@ void read(
         return ;
     }
 
-    schedule.setStopCount(stopCount);
     const auto& section = cfg.at(sname);
-    for (const auto& tzprop: section) {
-        const auto& tzstr = tzprop.first;
-        const auto& tzone = tzprop.second.items();
-        auto        dpos = tzstr.find('-');
-        Time::rep   ftzone = std::stoul(tzstr.substr(0, dpos));
-        auto        ltzone = ftzone + 1;
+    for (const auto& tgprop: section) {
+        auto        startTime = toTime(tgprop.first);
+        const auto& tgdesc = tgprop.second.items();
+        //  todo: manejar excepciones
+        const auto& durId = tgdesc.at(0);
+        auto        rep = tgdesc.size() > 1 ? tgdesc.at(1).asDecimal<size_t>() : 1;
+        auto        cadency = toDifTime(tgdesc.size() > 2 ? tgdesc.at(2).asDecimal<size_t>() : 0);
 
-        if (dpos != tzstr.npos) {
-            ltzone = std::stoul(tzstr.substr(dpos + 1)) + 1;
-        }
-        for (auto i = ftzone; i < ltzone; ++i) {
-            for (const auto& tlstr: tzone) {
-                assert(dtlines.at(tlstr).size() == stopCount);
+        while (rep--) {
+            assert(dtlines.at(durId).size() <= stopCount - 1);
 
-                auto    tline = applyTimeZone(dtlines.at(tlstr), i);
-                schedule.addTimeLine(tline);
-
-//                std::cout << "            ";
-                for (const auto& t: tline) {
-                    if (t.time_since_epoch().count() >= 0) {
-//                        std::cout << toString(t) << " ";
-                    } else {
-//                        std::cout << "--:-- ";
-                    }
-                }
-//                std::cout << std::endl;
-            }
+            auto    tline = applyDurations(dtlines.at(durId), startTime, stopCount);
+            schedule.addTimeLine(tline);
+            startTime += cadency;
         }
     }
 }

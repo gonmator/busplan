@@ -36,6 +36,10 @@ public:
     Line& addLine(const LineName& lname) {
         return lines_[lname];
     }
+    void removeLine(const LineName& lname) {
+        lines_.erase(lines_.find(lname));
+    }
+
     WalkingTimes& walkingTimes() {
         return walkingTimes_;
     }
@@ -52,31 +56,28 @@ public:
         }
         return lines_.at(routeid.linen).getPlatform(routeid.routen, stop);
     }
-    StopSet getStopSet() const {
-        StopSet rv;
-        for (const auto& linep: lines_) {
-            auto    lstopSet = linep.second.getStopSet();
-            rv.insert(lstopSet.cbegin(), lstopSet.cend());
-        }
-        return rv;
-    }
-    StepsLines getForwardStepsLines() const {
-        StepsLines  rv;
-        for (const auto& linep: lines_) {
-            rv.emplace_back(linep.first, std::move(linep.second.getForwardStepsRoutes()));
-        }
-        return rv;
-    }
-    StepsLines getBackwardStepsLines() const {
-        StepsLines  rv;
-        for (const auto& linep: lines_) {
-            rv.emplace_back(linep.first, std::move(linep.second.getBackwardStepsRoutes()));
-        }
-        return rv;
-    }
+    StopSet getStopSet() const;
+    StepsLines getForwardStepsLines() const;
+    StepsLines getBackwardStepsLines() const;
 
-    TimeLine getStopTimes(Route::Day day, const RouteId& routeid, const Stop& stop) const {
+    TimeLine getStopTimes(Day day, const RouteId& routeid, const Stop& stop) const {
         return lines_.at(routeid.linen).getStopTimes(day, routeid.routen, stop);
+    }
+    TimeLine getStopTimes(Day day, const Stop& stop) const;
+    Time getArriveTime(Day day, const RouteId& routeid, const Stop& from, Time leave, const Stop& to) const {
+        if (routeid == walkingRouteId) {
+            return ::getArriveTime(walkingTimes_, from, leave, to);
+        }
+        return lines_.at(routeid.linen).getArriveTime(day, routeid.routen, from, leave, to);
+    }
+    std::string getRouteDescription(const RouteId& routeid) const {
+        if (routeid == walkingRouteId) {
+            return "(walking)";
+        }
+        if (routeid.linen.empty()) {
+            return "";
+        }
+        return lines_.at(routeid.linen).getRouteDescription(routeid.routen);
     }
 
 private:

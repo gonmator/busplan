@@ -47,7 +47,7 @@ BusNetwork::BusNetwork(Lines&& lines): lines_{std::move(lines)}, graph_{}, stopM
 }
 
 BusNetwork::NodeList BusNetwork::planFromArrive(
-    Day day, const Stop& from, const Stop& to, Time& arrive) {
+    Day day, const Stop& from, const Stop& to, Time arrive, Details details) {
 
     BusNetwork::NodeList    rv;
 
@@ -149,16 +149,94 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
 
             return compare(combine(dpred, w[e1]), combine(dpred, w[e2]));
         });
-        auto    section = graph_[*eit];
+        auto        section = graph_[*eit];
+        const auto& to = section.from;
+        const auto& routeid = section.routeid;
         rv.push_back(
-            Node{section.routeid, stop, time, lines_.getPlatform(section.routeid, stop)});
+            Node{
+                {stop, time, lines_.getPlatform(routeid, stop)},
+                {to, lines_.getArriveTime(day, routeid, stop, time, to), lines_.getPlatform(routeid, to)},
+                routeid});
         stop = graph_[pred];
         time = dpred.time;
         v = pred;
         pred = p[v];
     }
-    rv.push_back(Node{RouteId{}, stop, time, {}});
+//    rv.push_back(Node{RouteId{}, stop, time, {}});
 
+    if (details == Details::transfers) {
+        return fromStepToTransferList(rv);
+    }
+    if (details == Details::ends) {
+        return fromStepToEndList(rv);
+    }
     return rv;
 }
+
+BusNetwork::Table BusNetwork::table(Day day, const Stop& from, const Stop& to, Details details) {
+    Table   rv;
+    auto    timeline = lines_.getStopTimes(day, to);
+    for (const auto& time: timeline) {
+        auto    nlist = planFromArrive(day, from, to, time, details);
+        if (!nlist.empty()) {
+            rv.push_back(nlist);
+        }
+    }
+
+    std::stable_sort(rv.begin(), rv.end(), [](const NodeList& nl1, const NodeList& nl2) {
+        assert(!nl1.empty());
+        assert(!nl2.empty());
+        assert(nl1.front().from.stop == nl2.front().from.stop);
+        assert(nl1.back().to.stop == nl2.back().to.stop);
+
+        return
+            nl1.back().to.time < nl2.back().to.time ||
+                (nl1.back().to.time == nl2.back().to.time && nl1.front().from.time > nl2.front().from.time);
+    });
+
+    rv.erase(std::unique(rv.begin(), rv.end(), [](const NodeList& nl1, const NodeList& nl2) {
+        assert(nl1.back().to.stop == nl2.back().to.stop);
+
+        return nl1.back().to.time == nl2.back().to.time || nl1.front().from.time == nl2.front().from.time;
+    }), rv.end());
+    return rv;
+}
+
+std::string BusNetwork::routeName(const RouteId& routeid) const {
+    return lines_.getRouteDescription(routeid);
+}
+
+BusNetwork::NodeList BusNetwork::fromStepToTransferList(const BusNetwork::NodeList& stepList) {
+    if (stepList.empty()) {
+        return NodeList{};
+    }
+
+    NodeList    rv;
+    RouteId     routeid = stepList.front().routeid;
+    RoutePoint  from = stepList.front().from;
+    RoutePoint  to;
+    for (const auto& node: stepList) {
+        if (node.routeid != routeid) {
+            rv.push_back(Node{from, to, routeid});
+            from = node.from;
+        }
+        routeid = node.routeid;
+        to = node.to;
+    }
+    rv.push_back(Node{from, to, routeid});
+    return rv;
+}
+
+BusNetwork::NodeList BusNetwork::fromTransferToEndList(const BusNetwork::NodeList& transferList) {
+    if (transferList.empty()) {
+        return NodeList{};
+    }
+
+    return NodeList{Node{transferList.front().from, transferList.back().to, RouteId{}}};
+}
+
+BusNetwork::NodeList BusNetwork::fromStepToEndList(const BusNetwork::NodeList& stepList) {
+    return fromTransferToEndList(stepList);
+}
+
 

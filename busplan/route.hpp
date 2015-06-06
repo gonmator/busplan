@@ -3,11 +3,13 @@
 #define ROUTE_HPP
 
 #include <algorithm>
+#include <array>
 #include <iterator>
 #include <map>
 #include <vector>
 
 #include "algorithm.hpp"
+#include "day.hpp"
 #include "schedule.hpp"
 #include "stop.hpp"
 
@@ -16,20 +18,15 @@ using Steps = std::vector<Step>;
 
 class Route {
 public:
-    enum class Day {
-        monToFri,
-        sat,
-        sun
-    };
 
-    Schedule& monToFri() {
-        return monToFriSchedule_;
+    const std::string& description() const {
+        return description_;
     }
-    Schedule& sat() {
-        return satSchedule_;
+    void description(std::string desc) {
+        description_ = std::move(desc);
     }
-    Schedule& sun() {
-        return sunSchedule_;
+    Schedule& schedule(Day day) {
+        return schedules_[day];
     }
     const Stops& stops() const {
         return stops_;
@@ -50,6 +47,13 @@ public:
         return getSteps(stops_.crbegin(), stops_.crend());
     }
 
+    void setDescription(std::string description) {
+        description_ = std::move(description);
+    }
+    const std::string getDescription() const {
+        return description_;
+    }
+
     Stop& addStop(const std::string& sstr) {
         stops_.push_back(Stop{sstr});
         return stops_.back();
@@ -60,15 +64,14 @@ public:
     }
 
     TimeLine getStopTimes(Day day, const Stop& stop) const {
-        switch (day) {
-        case Day::monToFri:
-            return monToFriSchedule_.getStopTimes(stopIndex(stop));
-        case Day::sat:
-            return satSchedule_.getStopTimes(stopIndex(stop));
-        case Day::sun:
-            return satSchedule_.getStopTimes(stopIndex(stop));
-        }
-        throw std::invalid_argument("invalid schedule day");
+        return schedules_[day].getStopTimes(stopIndex(stop));
+    }
+
+    Time getArriveTime(Day day, const Stop& from, Time leave, const Stop& to) const {
+        const auto& schedule = schedules_[day];
+        auto        timesA = schedule.getStopTimes(stopIndex(from));
+        auto        timeLineIx = std::find(timesA.cbegin(), timesA.cend(), leave) - timesA.cbegin();
+        return      schedule.getTime(timeLineIx, stopIndex(to));
     }
 
 private:
@@ -82,11 +85,10 @@ private:
         return std::find(stops_.cbegin(), stops_.cend(), stop) - stops_.cbegin();
     }
 
+    std::string                 description_;
     Stops                       stops_;
     std::map<Stop, std::string> platforms_;
-    Schedule                    monToFriSchedule_;
-    Schedule                    satSchedule_;
-    Schedule                    sunSchedule_;
+    std::array<Schedule, 7>     schedules_;
 };
 
 #endif // ROUTE_HPP

@@ -72,13 +72,23 @@ namespace Utility {
     void IniDoc::merge(const IniDoc &toMerge, DuplicateAction daction) {
         const auto& rdoc = toMerge.doc();
         for (const auto& rs: rdoc) {
-            auto&   s = doc_[rs.first];
-            for (const auto& rp: rs.second) {
-                if (!s.count(rp.first) || daction == DuplicateAction::overwrite) {
-                    s[rp.first] = rp.second;
-                } else if (daction == DuplicateAction::fail) {
-                    throw std::runtime_error(std::string{
-                        "duplicated property: \""}.append(rp.first).append("\" in section \"").append(rp.first));
+            if (!doc_.count(rs.first) || daction == DuplicateAction::overwriteSection) {
+                doc_[rs.first] = rs.second;
+            } else {
+                auto&   s = doc_[rs.first];
+
+                for (const auto& rp: rs.second) {
+                    if (!s.count(rp.first) || daction == DuplicateAction::overwriteProperty) {
+                        s[rp.first] = rp.second;
+                    } else if (daction == DuplicateAction::combineProperty) {
+                        auto&   is = s[rp.first].items();
+                        for (const auto& ri: rp.second.items()) {
+                            is.push_back(ri);
+                        }
+                    } else if (daction == DuplicateAction::fail) {
+                        throw std::runtime_error(std::string{
+                            "duplicated property: \""}.append(rp.first).append("\" in section \"").append(rp.first));
+                    }
                 }
             }
         }

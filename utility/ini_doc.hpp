@@ -112,7 +112,9 @@ namespace Utility {
 		using Doc = std::map < SectionName, Section > ;
         enum class DuplicateAction {
             doNothing,
-            overwrite,
+            overwriteSection,
+            overwriteProperty,
+            combineProperty,
             fail
         };
 		void clear() {

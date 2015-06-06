@@ -19,4 +19,8 @@ struct WalkingStep: std::pair<Stop, Stop> {
 
 using WalkingTimes = std::map<WalkingStep, DifTime>;
 
+inline Time getArriveTime(const WalkingTimes& walkingTimes, const Stop& from, Time leave, const Stop& to) {
+    return leave + walkingTimes.at(WalkingStep{from, to});
+}
+
 #endif // WALKING_HPP

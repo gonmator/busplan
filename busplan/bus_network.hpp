@@ -7,19 +7,25 @@
 #include <vector>
 #include <boost/graph/adjacency_list.hpp>
 
+#include "day.hpp"
+#include "details.hpp"
 #include "lines.hpp"
 #include "stop.hpp"
 
 class BusNetwork {
 public:
-    struct Node {
-        RouteId     routeid;
+    struct RoutePoint {
         Stop        stop;
         Time        time;
         std::string platform;
     };
+    struct Node {
+        RoutePoint  from;
+        RoutePoint  to;
+        RouteId     routeid;
+    };
     using NodeList = std::vector<Node>;
-    using Day = Route::Day;
+    using Table = std::vector<NodeList>;
 
     BusNetwork(Lines&& lines);
 
@@ -29,8 +35,10 @@ public:
     RouteNames getRouteNames(const LineName& linen) const {
         return lines_.getRouteNames(linen);
     }
-    NodeList planFromArrive(Day day, const Stop& from, const Stop& to, Time& arrive);
+    NodeList planFromArrive(Day day, const Stop& from, const Stop& to, Time arrive, Details details);
+    Table table(Day day, const Stop& from, const Stop& to, Details details);
 
+    std::string routeName(const RouteId& routeid) const;
 private:
 
     struct Section {
@@ -59,6 +67,9 @@ private:
     using EdgeDesc = boost::graph_traits<Graph>::edge_descriptor;
 
     void init();
+    static NodeList fromStepToTransferList(const NodeList& stepList);
+    static NodeList fromTransferToEndList(const NodeList& transferList);
+    static NodeList fromStepToEndList(const NodeList& stepList);
 
     Lines                       lines_;
     Graph                       graph_;
