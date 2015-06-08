@@ -2,6 +2,7 @@
 #ifndef TIME_LINE_HPP
 #define TIME_LINE_HPP
 
+#include <algorithm>
 #include <chrono>
 #include <map>
 #include <string>
@@ -21,6 +22,10 @@ using TimeLine = std::vector<Time>;
 
 TimeLine applyDurations(const DifTimeLine& dtline, Time start);
 
-
+inline TimeLine& reduceTimeLine(TimeLine& timeline) {
+    timeline.erase(std::unique(timeline.begin(), timeline.end()), timeline.end());
+    std::sort(timeline.begin(), timeline.end());
+    return timeline;
+}
 
 #endif // TIME_LINE_HPP

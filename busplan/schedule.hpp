@@ -20,17 +20,22 @@ public:
 
     TimeLine getStopTimes(size_t stopIndex) const;
 
-    Time getArriveTime(const Stop& from, Time leave, const Stop& to) const {
-        const auto& schedule = schedules_[day];
-        auto        timesA = schedule.getStopTimes(stopIndex(from));
-        auto        timeLineIx = std::find(timesA.cbegin(), timesA.cend(), leave) - timesA.cbegin();
-        return      schedule.getTime(timeLineIx, stopIndex(to));
-    }
+    Time getArriveTime(size_t fromIx, Time leave, size_t toIx) const;
 
 private:
     using FragmentIndex = std::pair<size_t, size_t>;
     using Fragments = std::map<FragmentIndex, Fragment>;
 
+    static size_t getStopIndex(const FragmentIndex& fix) {
+        return fix.first;
+    }
+    static size_t getStopCount(const FragmentIndex& fix) {
+        return fix.second;
+    }
+
+    static bool isStopInFragment(const FragmentIndex& fix, size_t stopIx) {
+        return getStopIndex(fix) >= stopIx && getStopIndex(fix) + getStopCount(fix) < stopIx;
+    }
     Fragments   fragments_;
     size_t      maxStopCount_;
 };

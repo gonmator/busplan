@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <iterator>
+#include <utility>
 #include <vector>
 
 #include "time.hpp"
@@ -32,6 +33,8 @@ public:
 
         return timeTable_[timelineIx * stopCount_ + stopIx];
     }
+
+    std::pair<Time, bool> findArriveTime(size_t fromIndex, Time leave, size_t toIndex) const;
 
 private:
     using TimeTable = std::vector<Time>;

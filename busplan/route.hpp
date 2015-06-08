@@ -70,7 +70,8 @@ public:
     }
 
     Time getArriveTime(Day day, const Stop& from, Time leave, const Stop& to) const {
-        return schedules(day).getArriveTime(from, leave, to);
+        assert(day < 7);
+        return schedules_.at(day).getArriveTime(stopIndex(from), leave, stopIndex(to));
     }
 
 private:
