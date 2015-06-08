@@ -3,55 +3,36 @@
 #define SCHEDULE_HPP
 
 #include <cassert>
-#include <iterator>
-#include <vector>
+#include <map>
 
-#include "time.hpp"
-#include "time_line.hpp"
+#include "fragment.hpp"
 
 class Schedule {
 public:
     void setStopCount(size_t stopCount) {
-        stopCount_ = stopCount;
+        maxStopCount_ = stopCount;
     }
-    void addTimeLine(const TimeLine& tline) {
-        assert(tline.size() == stopCount_);
+    void addTimeLine(size_t fromIx, const TimeLine& tline) {
+        assert(tline.size() <= maxStopCount_);
 
-        timeTable_.insert(timeTable_.end(), tline.cbegin(), tline.cend());
-        ++timeLinesCount_;
-
-        assert(timeTable_.size() == stopCount_ * timeLinesCount_);
+        fragments_[std::make_pair(fromIx, tline.size())].addTimeLine(tline);
     }
 
-    TimeLine getStopTimes(size_t stopIndex) const {
-        if (stopIndex >= stopCount_) {
-            throw std::out_of_range{"stop index out of range in schedule"};
-        }
+    TimeLine getStopTimes(size_t stopIndex) const;
 
-        TimeLine    rv;
-        for (size_t i = 0; i < timeLinesCount_; ++i) {
-            rv.push_back(timeTable_[i * stopCount_ + stopIndex]);
-        }
-        return rv;
-    }
-
-    Time getTime(size_t timelineIx, size_t stopIx) const {
-        assert(timelineIx < timeLinesCount_);
-        assert(stopIx < stopCount_);
-        assert(timeTable_.size() == stopCount_ * timeLinesCount_);
-
-        return timeTable_[timelineIx * stopCount_ + stopIx];
+    Time getArriveTime(const Stop& from, Time leave, const Stop& to) const {
+        const auto& schedule = schedules_[day];
+        auto        timesA = schedule.getStopTimes(stopIndex(from));
+        auto        timeLineIx = std::find(timesA.cbegin(), timesA.cend(), leave) - timesA.cbegin();
+        return      schedule.getTime(timeLineIx, stopIndex(to));
     }
 
 private:
-    using TimeTable = std::vector<Time>;
-    struct TimeTableIterator: std::forward_iterator_tag {
-        TimeTableIterator();
-    };
+    using FragmentIndex = std::pair<size_t, size_t>;
+    using Fragments = std::map<FragmentIndex, Fragment>;
 
-    size_t      stopCount_;
-    size_t      timeLinesCount_;
-    TimeTable   timeTable_;
+    Fragments   fragments_;
+    size_t      maxStopCount_;
 };
 
 #endif // SCHEDULE_HPP

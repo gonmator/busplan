@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -9,8 +10,8 @@
 
 void read(const Utility::IniDoc::Doc&, const std::string&, Line&);
 void read(const Utility::IniDoc::Doc&, const std::string&, Route&);
-void read(const Utility::IniDoc::Doc&, const std::string&, DifTimeLines&dtlines);
-void read(const Utility::IniDoc::Doc&, const std::string&, size_t, const DifTimeLines&, Schedule&);
+void read(const Utility::IniDoc::Doc&, const std::string&, const Stops&, DifTimeLines&dtlines);
+void read(const Utility::IniDoc::Doc&, const std::string&, const Stops&, const DifTimeLines&, Schedule&);
 void read(const Utility::IniDoc::Doc& cfg, WalkingTimes& wt);
 
 inline std::string strip(std::string str) {
@@ -84,7 +85,7 @@ void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Route& rout
     }
 
     DifTimeLines    dtimeLines;
-    read(cfg, sname + ".durations", dtimeLines);
+    read(cfg, sname + ".durations", route.stops(), dtimeLines);
 
     Day day{};
     const auto& timetables = cfg.at(sname).at("timetables").items();
@@ -100,15 +101,16 @@ void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Route& rout
             continue;
         }
         try {
-            read(cfg, sname + "." + ttstr, stoplist.size(), dtimeLines, route.schedule(day));
+            read(cfg, sname + "." + ttstr, route.stops(), dtimeLines, route.schedule(day));
         } catch (const std::out_of_range&) {
             std::cerr << "Error in day: " << day << "(" << sname << ")" << std::endl;
         }
     }
 }
 
+//  read [<line>.<route>.durations]
 void read(
-    const Utility::IniDoc::Doc& cfg, const std::string& sname, DifTimeLines& dtlines) {
+    const Utility::IniDoc::Doc& cfg, const std::string& sname, const Stops& stops, DifTimeLines& dtlines) {
 //    std::cout << "        Time lines:" << std::endl;
     if (!cfg.count(sname)) {
         return;
@@ -117,17 +119,26 @@ void read(
     for (const auto& tlprop: section) {
 //        std::cout << "            " << tlprop.first << " -> " << tlprop.second.string() << std::endl;
 
-        DifTimeLine&   dtline = dtlines[tlprop.first];
-        for (const auto& dtstr: tlprop.second.items()) {
-            dtline.push_back(toDifTime(dtstr));
+        auto&       dtline = dtlines[tlprop.first];
+        const auto& dtlist = tlprop.second.items();
+        auto        dtit = dtlist.cbegin();
+        auto        stopIt = std::find(stops.cbegin(), stops.cend(), *dtit);
+        if (stopIt != stops.cend()) {
+            dtline.from = *dtit++;
+        } else {
+            dtline.from = stops.front();
         }
+        std::for_each(dtit, dtlist.cend(), [&dtline](const std::string& dtstr) {
+            dtline.durations.push_back(toDifTime(dtstr));
+        });
     }
 }
 
+//  read [<line>.<route>.<timetable>]
 void read(
     const Utility::IniDoc::Doc& cfg,
     const std::string&          sname,
-    size_t                      stopCount,
+    const Stops&                stops,
     const DifTimeLines&         dtlines,
     Schedule&                   schedule) {
 
@@ -143,12 +154,11 @@ void read(
         const auto& durId = tgdesc.at(0);
         auto        rep = tgdesc.size() > 1 ? tgdesc.at(1).asDecimal<size_t>() : 1;
         auto        cadency = toDifTime(tgdesc.size() > 2 ? tgdesc.at(2).asDecimal<size_t>() : 0);
-
+        const auto& dtline = dtlines.at(durId);
+        auto        fromIx = std::find(stops.cbegin(), stops.cend(), dtline.from) - stops.cbegin();
         while (rep--) {
-            assert(dtlines.at(durId).size() <= stopCount - 1);
-
-            auto    tline = applyDurations(dtlines.at(durId), startTime, stopCount);
-            schedule.addTimeLine(tline);
+            auto    tline = applyDurations(dtline, startTime);
+            schedule.addTimeLine(fromIx, tline);
             startTime += cadency;
         }
     }

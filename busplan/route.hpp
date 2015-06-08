@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <iterator>
 #include <map>
 #include <vector>
@@ -26,6 +27,7 @@ public:
         description_ = std::move(desc);
     }
     Schedule& schedule(Day day) {
+        assert(day < 7);
         return schedules_[day];
     }
     const Stops& stops() const {
@@ -68,10 +70,7 @@ public:
     }
 
     Time getArriveTime(Day day, const Stop& from, Time leave, const Stop& to) const {
-        const auto& schedule = schedules_[day];
-        auto        timesA = schedule.getStopTimes(stopIndex(from));
-        auto        timeLineIx = std::find(timesA.cbegin(), timesA.cend(), leave) - timesA.cbegin();
-        return      schedule.getTime(timeLineIx, stopIndex(to));
+        return schedules(day).getArriveTime(from, leave, to);
     }
 
 private:
