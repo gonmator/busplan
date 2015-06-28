@@ -115,7 +115,21 @@ int main(int argc, char *argv[])
         return 2;
     }
 
+    if (!fromStop.empty()) {
+        fromStop = checkStop(stopdescs, fromStop);
+        if (fromStop.empty()) {
+            std::cerr << "invalid from stop" << std::endl;
+        }
+    }
+    if (!toStop.empty()) {
+        toStop = checkStop(stopdescs, toStop);
+        if (toStop.empty()) {
+            std::cerr << "invalid to stop" << std::endl;
+        }
+    }
+
     BusNetwork  busNetwork{std::move(lines)};
+
 
     if (cmd == Command::getLines) {
         auto    linesn = busNetwork.getLineNames();
@@ -200,7 +214,7 @@ int main(int argc, char *argv[])
                 if (node.to.platform.empty()) {
                     std::cout << stopdescs.at(node.to.stop)[0] << "\t";
                 } else {
-                    std::cout << node.to.platform;
+                    std::cout << node.to.platform << "\t";
                 }
                 //  arrive
                 std::cout << toString(node.to.time) << "\t";

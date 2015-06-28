@@ -30,6 +30,9 @@ Time Schedule::getArriveTime(size_t fromIx, Time leave, size_t toIx) const {
             }
         }
     }
+    if (arrives.empty()) {
+        throw std::domain_error{"no arrive time found"};
+    }
     return reduceTimeLine(arrives).front();
 }
 

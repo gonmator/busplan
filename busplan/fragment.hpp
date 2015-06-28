@@ -12,26 +12,15 @@
 
 class Fragment {
 public:
-    void setStopCount(size_t stopCount) {
-        stopCount_ = stopCount;
-    }
-    void addTimeLine(const TimeLine& tline) {
-        assert(tline.size() == stopCount_);
-
-        timeTable_.insert(timeTable_.end(), tline.cbegin(), tline.cend());
-        ++timeLinesCount_;
-
-        assert(timeTable_.size() == stopCount_ * timeLinesCount_);
-    }
-
+    void addTimeLine(const TimeLine& tline);
     TimeLine getStopTimes(size_t stopIndex) const;
 
     Time getTime(size_t timelineIx, size_t stopIx) const {
         assert(timelineIx < timeLinesCount_);
-        assert(stopIx < stopCount_);
-        assert(timeTable_.size() == stopCount_ * timeLinesCount_);
+        assert(stopIx < stopCount());
+        assert(timeTable_.size() == stopCount() * timeLinesCount_);
 
-        return timeTable_[timelineIx * stopCount_ + stopIx];
+        return timeTable_[timelineIx * stopCount() + stopIx];
     }
 
     std::pair<Time, bool> findArriveTime(size_t fromIndex, Time leave, size_t toIndex) const;
@@ -42,7 +31,10 @@ private:
         TimeTableIterator();
     };
 
-    size_t      stopCount_;
+    size_t stopCount() const {
+        return timeTable_.size() / timeLinesCount_;
+    }
+
     size_t      timeLinesCount_;
     TimeTable   timeTable_;
 };

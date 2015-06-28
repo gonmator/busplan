@@ -35,7 +35,8 @@ public:
     RouteNames getRouteNames(const LineName& linen) const {
         return lines_.getRouteNames(linen);
     }
-    NodeList planFromArrive(Day day, const Stop& from, const Stop& to, Time arrive, Details details);
+    NodeList planFromArrive(
+        Day day, const Stop& from, const Stop& to, Time arrive, Details details, DifTime delay = std::chrono::minutes{5});
     Table table(Day day, const Stop& from, const Stop& to, Details details);
 
     std::string routeName(const RouteId& routeid) const;

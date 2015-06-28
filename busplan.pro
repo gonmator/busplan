@@ -15,7 +15,8 @@ SOURCES += \
     busplan/lines.cpp \
     busplan/fragment.cpp \
     busplan/schedule.cpp \
-    busplan/time_line.cpp
+    busplan/time_line.cpp \
+    busplan/stop.cpp
 
 HEADERS += \
     busplan/lines.hpp \
@@ -46,4 +47,5 @@ OTHER_FILES += \
     networks/lux/1xx.lines.cfg \
     networks/lux/busplan.cfg \
     networks/lux/old.avl.lines.cfg \
-    networks/lux/avl.lines.cfg
+    networks/lux/avl.lines.cfg \
+    networks/lux/18.cfg

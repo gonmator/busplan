@@ -7,11 +7,16 @@
 
 #include <iostream>
 
+namespace {
+DifTime adjustDelay;
+const DifTime noDelay{std::chrono::minutes{0}};
+}
+
 inline DifTime adjust(const RouteId& rida, const RouteId& ridb) {
     if (rida == ridb || rida == walkingRouteId) {
         return DifTime{0};
     }
-    return std::chrono::minutes{5};
+    return adjustDelay;
 }
 
 BusNetwork::BusNetwork(Lines&& lines): lines_{std::move(lines)}, graph_{}, stopMap_{} {
@@ -47,7 +52,7 @@ BusNetwork::BusNetwork(Lines&& lines): lines_{std::move(lines)}, graph_{}, stopM
 }
 
 BusNetwork::NodeList BusNetwork::planFromArrive(
-    Day day, const Stop& from, const Stop& to, Time arrive, Details details) {
+    Day day, const Stop& from, const Stop& to, Time arrive, Details details, DifTime delay) {
 
     BusNetwork::NodeList    rv;
 
@@ -111,6 +116,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     });
 
     auto    u = stopMap_[to];
+    adjustDelay = delay;
     boost::dijkstra_shortest_paths(
         graph_,
         u,
@@ -177,7 +183,7 @@ BusNetwork::Table BusNetwork::table(Day day, const Stop& from, const Stop& to, D
     Table   rv;
     auto    timeline = lines_.getStopTimes(day, to);
     for (const auto& time: timeline) {
-        auto    nlist = planFromArrive(day, from, to, time, details);
+        auto    nlist = planFromArrive(day, from, to, time, details, noDelay);
         if (!nlist.empty()) {
             rv.push_back(nlist);
         }
@@ -205,6 +211,7 @@ BusNetwork::Table BusNetwork::table(Day day, const Stop& from, const Stop& to, D
 std::string BusNetwork::routeName(const RouteId& routeid) const {
     return lines_.getRouteDescription(routeid);
 }
+
 
 BusNetwork::NodeList BusNetwork::fromStepToTransferList(const BusNetwork::NodeList& stepList) {
     if (stepList.empty()) {

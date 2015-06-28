@@ -42,3 +42,5 @@ TimeLine Line::getStopTimes(Day day, const Stop& stop) const {
 
     return rv;
 }
+
+

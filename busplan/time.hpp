@@ -54,8 +54,9 @@ inline std::string toString(Time t) {
     static const char dec[] = "0123456789";
     std::string rv;
     auto        dur = t.time_since_epoch();
-    auto        h = std::chrono::duration_cast<std::chrono::hours>(dur) % 24;
+    auto        h = std::chrono::duration_cast<std::chrono::hours>(dur);
     auto        m = dur - h;
+    h %= 24;
 
     if (h.count() < 10) {
         rv.append(1, '0');

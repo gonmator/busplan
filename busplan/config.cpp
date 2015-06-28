@@ -35,17 +35,22 @@ void read(const Utility::IniDoc::Doc &cfg, Lines& lines, StopDescriptions& sds) 
             std::forward_as_tuple(sdlist.cbegin(), sdlist.cend()));
     }
 
-    const auto& lineslist = cfg.at("").at("lines").items();
-    for (const auto& lstr: lineslist) {
-//        std::cout << "Line: " << lstr << std::endl;
+    try {
+        const auto& lineslist = cfg.at("").at("lines").items();
+        for (const auto& lstr: lineslist) {
+    //        std::cout << "Line: " << lstr << std::endl;
 
-        auto&   line = lines.addLine(lstr);
-        try {
-            read(cfg, lstr, line);
-        } catch (const std::out_of_range&) {
-            std::cerr << "Error in line: " << lstr << std::endl;
-            lines.removeLine(lstr);
+            auto&   line = lines.addLine(lstr);
+            try {
+                read(cfg, lstr, line);
+            } catch (const std::out_of_range&) {
+                std::cerr << "Error in line: " << lstr << std::endl;
+                lines.removeLine(lstr);
+            }
         }
+    } catch (const std::out_of_range&) {
+        std::cerr << "Missing 'line' property." << std::endl;
+        return ;
     }
 
     read(cfg, lines.walkingTimes());
@@ -122,14 +127,14 @@ void read(
         auto&       dtline = dtlines[tlprop.first];
         const auto& dtlist = tlprop.second.items();
         auto        dtit = dtlist.cbegin();
-        auto        stopIt = std::find(stops.cbegin(), stops.cend(), *dtit);
+        auto        stopIt = std::find(stops.cbegin(), stops.cend(), strip(*dtit));
         if (stopIt != stops.cend()) {
-            dtline.from = *dtit++;
+            dtline.from = strip(*dtit++);
         } else {
             dtline.from = stops.front();
         }
         std::for_each(dtit, dtlist.cend(), [&dtline](const std::string& dtstr) {
-            dtline.durations.push_back(toDifTime(dtstr));
+            dtline.durations.push_back(toDifTime(strip(dtstr)));
         });
     }
 }

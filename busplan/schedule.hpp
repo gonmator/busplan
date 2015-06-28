@@ -15,7 +15,9 @@ public:
     void addTimeLine(size_t fromIx, const TimeLine& tline) {
         assert(tline.size() <= maxStopCount_);
 
-        fragments_[std::make_pair(fromIx, tline.size())].addTimeLine(tline);
+        auto    fragmentIx = std::make_pair(fromIx, tline.size());
+        auto&   fragment = fragments_[fragmentIx];
+        fragment.addTimeLine(tline);
     }
 
     TimeLine getStopTimes(size_t stopIndex) const;
@@ -34,7 +36,7 @@ private:
     }
 
     static bool isStopInFragment(const FragmentIndex& fix, size_t stopIx) {
-        return getStopIndex(fix) >= stopIx && getStopIndex(fix) + getStopCount(fix) < stopIx;
+        return getStopIndex(fix) <= stopIx && getStopIndex(fix) + getStopCount(fix) > stopIx;
     }
     Fragments   fragments_;
     size_t      maxStopCount_;
