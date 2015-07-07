@@ -56,7 +56,7 @@ inline std::string toString(Time t) {
     auto        dur = t.time_since_epoch();
     auto        h = std::chrono::duration_cast<std::chrono::hours>(dur);
     auto        m = dur - h;
-    h %= 24;
+    h = h % 24;
 
     if (h.count() < 10) {
         rv.append(1, '0');
@@ -73,6 +73,17 @@ inline std::string toString(Time t) {
 
     return rv;
 }
+
+/* inline std::istream& operator>>(std::istream& is, DifTime& dt) {
+    std::string dts;
+    is >> dts;
+    dt = toDifTime(dts);
+    return is;
+}
+
+inline std::ostream& operator<<(std::ostream& os, DifTime dt) {
+    return os << toString(Time{dt});
+} */
 
 inline std::istream& operator>>(std::istream& is, Time& t) {
     std::string ts;

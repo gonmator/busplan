@@ -37,7 +37,7 @@ TimeLine Line::getStopTimes(Day day, const Stop& stop) const {
             //  ignore, it is ok.
         }
     }
-    std::stable_sort(rv.begin(), rv.end());
+    std::sort(rv.begin(), rv.end());
     rv.erase(std::unique(rv.begin(), rv.end()), rv.end());
 
     return rv;

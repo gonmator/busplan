@@ -179,11 +179,11 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     return rv;
 }
 
-BusNetwork::Table BusNetwork::table(Day day, const Stop& from, const Stop& to, Details details) {
+BusNetwork::Table BusNetwork::table(Day day, const Stop& from, const Stop& to, Details details, DifTime delay) {
     Table   rv;
     auto    timeline = lines_.getStopTimes(day, to);
     for (const auto& time: timeline) {
-        auto    nlist = planFromArrive(day, from, to, time, details, noDelay);
+        auto    nlist = planFromArrive(day, from, to, time + delay, details, delay);
         if (!nlist.empty()) {
             rv.push_back(nlist);
         }

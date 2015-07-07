@@ -53,6 +53,9 @@ void resolveImports(Utility::IniDoc& config) {
     }
 }
 
+
+std::istream& operator>>(std::istream& is, DifTime&);
+
 int main(int argc, char *argv[])
 {
     namespace po = boost::program_options;
@@ -62,6 +65,8 @@ int main(int argc, char *argv[])
     Day         day;
     Command     cmd;
     Details     details;
+    DifTime     delay; std::string fakeDelay;
+
 
     po::options_description command_desc("Command");
     command_desc.add_options()
@@ -74,6 +79,7 @@ int main(int argc, char *argv[])
         ("arrive", po::value<Time>(&arriveTime)->value_name("TIME"))
         ("date", po::value<Day>(&day)->value_name("DATE")->default_value(Day{"today"}))
         ("details", po::value<Details>(&details)->value_name("DETAILS")->default_value(Details::steps))
+        ("delay", po::value<std::string>(&fakeDelay)->value_name("DELAY")->default_value("0:05"))
         ;
     po::positional_options_description  cmdDesc;
     cmdDesc.add("command", 1);
@@ -84,6 +90,7 @@ int main(int argc, char *argv[])
         po::store(po::command_line_parser(argc, argv).options(desc).positional(cmdDesc).run(), vm);
         po::notify(vm);
         validate(vm);
+        delay = toDifTime(fakeDelay);
     } catch (const po::error& e) {
         std::string pfname(argv[0]);
         pfname.erase(0, pfname.find_last_of("/\\") + 1);
@@ -160,7 +167,7 @@ int main(int argc, char *argv[])
     }
 
     if (cmd == Command::getPlan) {
-        auto    routelist = busNetwork.planFromArrive(day, fromStop, toStop, arriveTime, details);
+        auto    routelist = busNetwork.planFromArrive(day, fromStop, toStop, arriveTime, details, delay);
 
         std::cout << "From\tLeave\tRoute\tTo\tArrive" << std::endl;
         for (const auto& node: routelist) {
@@ -192,7 +199,7 @@ int main(int argc, char *argv[])
     }
 
     if (cmd == Command::getTable) {
-        auto    table = busNetwork.table(day, fromStop, toStop, details);
+        auto    table = busNetwork.table(day, fromStop, toStop, details, delay);
 
         for (const auto& nodeList: table) {
             for (const auto& node: nodeList) {
