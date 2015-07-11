@@ -19,12 +19,15 @@ struct DifTimeLine {
 using DifTimeLines = std::map<std::string, DifTimeLine>;
 using TimeLine = std::vector<Time>;
 
+inline bool operator<(const TimeLine& a, const TimeLine& b) {
+    return std::lexicographical_compare(a.cbegin(), a.cend(), b.cbegin(), b.cend());
+}
 
 TimeLine applyDurations(const DifTimeLine& dtline, Time start);
 
 inline TimeLine& reduceTimeLine(TimeLine& timeline) {
-    timeline.erase(std::unique(timeline.begin(), timeline.end()), timeline.end());
     std::sort(timeline.begin(), timeline.end());
+    timeline.erase(std::unique(timeline.begin(), timeline.end()), timeline.end());
     return timeline;
 }
 

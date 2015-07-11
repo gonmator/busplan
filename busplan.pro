@@ -16,7 +16,8 @@ SOURCES += \
     busplan/fragment.cpp \
     busplan/schedule.cpp \
     busplan/time_line.cpp \
-    busplan/stop.cpp
+    busplan/stop.cpp \
+    busplan/time_table.cpp
 
 HEADERS += \
     busplan/lines.hpp \
@@ -35,7 +36,8 @@ HEADERS += \
     utility/ini_doc.hpp \
     busplan/day.hpp \
     busplan/details.hpp \
-    busplan/fragment.hpp
+    busplan/fragment.hpp \
+    busplan/time_table.hpp
 
 
 unix|win32: LIBS += -lboost_program_options

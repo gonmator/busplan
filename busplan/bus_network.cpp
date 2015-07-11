@@ -54,6 +54,9 @@ BusNetwork::BusNetwork(Lines&& lines): lines_{std::move(lines)}, graph_{}, stopM
 BusNetwork::NodeList BusNetwork::planFromArrive(
     Day day, const Stop& from, const Stop& to, Time arrive, Details details, DifTime delay) {
 
+    if (arrive == toTime("19:42")) {
+        int a = 0;
+    }
     BusNetwork::NodeList    rv;
 
     using DistanceMap = std::map<VertexDesc, StopTime>;
@@ -168,6 +171,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
         v = pred;
         pred = p[v];
     }
+
 //    rv.push_back(Node{RouteId{}, stop, time, {}});
 
     if (details == Details::transfers) {
