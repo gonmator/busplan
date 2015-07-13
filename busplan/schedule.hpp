@@ -15,9 +15,13 @@ public:
     void addTimeLine(size_t fromIx, const TimeLine& tline) {
         assert(tline.size() <= maxStopCount_);
 
-        auto    fragmentIx = std::make_pair(fromIx, tline.size());
-        auto&   fragment = fragments_[fragmentIx];
-        fragment.addTimeLine(tline);
+        auto    stopCount = tline.size();
+        auto    fragmentIx = std::make_pair(fromIx, stopCount);
+        auto    fragmentIt = fragments_.find(fragmentIx);
+        if (fragmentIt == fragments_.end()) {
+            fragmentIt = fragments_.emplace(fragmentIx, tline.size()).first;
+        }
+        fragmentIt->second.addTimeLine(tline);
     }
 
     TimeLine getStopTimes(size_t stopIndex) const;

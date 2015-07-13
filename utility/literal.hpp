@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <string>
+#include <typeinfo>
 #include <type_traits>
 #include <vector>
 
