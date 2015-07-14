@@ -36,7 +36,7 @@ private:
         timeLineIt_ += n;
     }
     size_t distance_to(const ConstTimeTableIterator& other) const {
-        return timeLineIt_ - other.timeLineIt_;
+        return other.timeLineIt_ - timeLineIt_;
     }
 
     size_t                  stopIndex_;
