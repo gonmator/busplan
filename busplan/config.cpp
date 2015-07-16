@@ -10,6 +10,7 @@
 
 void read(const Utility::IniDoc::Doc&, const std::string&, Line&);
 void read(const Utility::IniDoc::Doc&, const std::string&, Route&);
+void readPlatforms(const Utility::IniDoc::Doc&, const std::string&, Route&);
 void read(const Utility::IniDoc::Doc&, const std::string&, const Stops&, DifTimeLines&dtlines);
 void read(const Utility::IniDoc::Doc&, const std::string&, const Stops&, const DifTimeLines&, Schedule&);
 void read(const Utility::IniDoc::Doc& cfg, WalkingTimes& wt);
@@ -80,14 +81,7 @@ void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Route& rout
         route.addStop(strip(sstr));
     }
 
-//    std::cout << "        Platforms: " << std::endl;
-    const auto& psection = cfg.at(sname + ".platforms");
-    for (const auto& pprop: psection) {
-        const auto& pstr = pprop.second.string();
-//        std::cout << "            " << pprop.first << " -> " << pstr << std::endl;
-
-        route.addPlatform(pprop.first, pstr);
-    }
+    readPlatforms(cfg, sname + ".platforms", route);
 
     DifTimeLines    dtimeLines;
     read(cfg, sname + ".durations", route.stops(), dtimeLines);
@@ -109,6 +103,20 @@ void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Route& rout
             read(cfg, sname + "." + ttstr, route.stops(), dtimeLines, route.schedule(day));
         } catch (const std::out_of_range&) {
             std::cerr << "Error in day: " << day << "(" << sname << ")" << std::endl;
+        }
+    }
+}
+
+
+void readPlatforms(const Utility::IniDoc::Doc& cfg, const std::string& sname, Route& route) {
+    auto    sectionIt = cfg.find(sname);
+    if (sectionIt != cfg.cend()) {
+        //    std::cout << "        Platforms: " << std::endl;
+        for (const auto& pprop: sectionIt->second) {
+            const auto& pstr = pprop.second.string();
+        //        std::cout << "            " << pprop.first << " -> " << pstr << std::endl;
+
+            route.addPlatform(pprop.first, pstr);
         }
     }
 }
@@ -138,6 +146,9 @@ void read(
         });
     }
 }
+
+
+
 
 //  read [<line>.<route>.<timetable>]
 void read(
