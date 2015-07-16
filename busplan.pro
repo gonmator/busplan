@@ -17,7 +17,8 @@ SOURCES += \
     busplan/schedule.cpp \
     busplan/time_line.cpp \
     busplan/stop.cpp \
-    busplan/time_table.cpp
+    busplan/time_table.cpp \
+    busplan/logger.cpp
 
 HEADERS += \
     busplan/lines.hpp \
@@ -37,7 +38,8 @@ HEADERS += \
     busplan/day.hpp \
     busplan/details.hpp \
     busplan/fragment.hpp \
-    busplan/time_table.hpp
+    busplan/time_table.hpp \
+    busplan/logger.hpp
 
 
 unix|win32: LIBS += -lboost_program_options
@@ -52,4 +54,5 @@ OTHER_FILES += \
     networks/lux/avl.lines.cfg \
     networks/lux/18.cfg \
     networks/lux/18b.cfg \
-    networks/lux/27.cfg
+    networks/lux/27.cfg \
+    networks/busplan.cfg

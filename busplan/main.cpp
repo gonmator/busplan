@@ -16,6 +16,7 @@
 #include "day.hpp"
 #include "details.hpp"
 #include "lines.hpp"
+#include "logger.hpp"
 #include "options.hpp"
 
 std::string MissingOption::toString(const OptionNameList& optionNames) {
@@ -66,7 +67,7 @@ int main(int argc, char *argv[])
     Command     cmd;
     Details     details;
     DifTime     delay; std::string fakeDelay;
-
+    std::string logFile;
 
     po::options_description command_desc("Command");
     command_desc.add_options()
@@ -80,6 +81,7 @@ int main(int argc, char *argv[])
         ("date", po::value<Day>(&day)->value_name("DATE")->default_value(Day{"today"}))
         ("details", po::value<Details>(&details)->value_name("DETAILS")->default_value(Details::steps))
         ("delay", po::value<std::string>(&fakeDelay)->value_name("DELAY")->default_value("0:05"))
+        ("logfile", po::value<std::string>(&logFile)->value_name("PATH"))
         ;
     po::positional_options_description  cmdDesc;
     cmdDesc.add("command", 1);
@@ -135,6 +137,10 @@ int main(int argc, char *argv[])
         }
     }
 
+    if (!logFile.empty()) {
+        Logger  logger;
+        logger.create("debug", logFile);
+    }
     BusNetwork  busNetwork{std::move(lines)};
 
 

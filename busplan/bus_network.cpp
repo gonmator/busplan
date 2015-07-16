@@ -3,6 +3,7 @@
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 
 #include "bus_network.hpp"
+#include "logger.hpp"
 #include "time.hpp"
 
 #include <iostream>
@@ -54,9 +55,6 @@ BusNetwork::BusNetwork(Lines&& lines): lines_{std::move(lines)}, graph_{}, stopM
 BusNetwork::NodeList BusNetwork::planFromArrive(
     Day day, const Stop& from, const Stop& to, Time arrive, Details details, DifTime delay) {
 
-    if (arrive == toTime("19:42")) {
-        int a = 0;
-    }
     BusNetwork::NodeList    rv;
 
     using DistanceMap = std::map<VertexDesc, StopTime>;
@@ -67,13 +65,55 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     DistanceMap     d;
     WeightMap       w;
 
+    struct Visitor {
+        Visitor(const DistanceMap& d, const WeightMap& w): log{Logger{}.log("debug")}, d{d}, w{w} {}
+
+        void initialize_vertex(const VertexDesc& u, const Graph& g) {
+            log << "initialize " << g[u] << std::endl;
+        }
+        void examine_vertex(const VertexDesc& u, const Graph& g) {
+            log << "examine " << g[u] << std::endl;
+        }
+        void examine_edge(const EdgeDesc& e, const Graph& g) {
+            const auto& section = g[e];
+            log << "examine " << section.from << " <- " << section.routeid.linen << "." << section.routeid.routen;
+            log << " <- " << section.to << std::endl;
+        }
+        void discover_vertex(const VertexDesc& u, const Graph& g) {
+            log << "discover " << g[u] << std::endl;
+        }
+        void edge_relaxed(const EdgeDesc& e, const Graph& g) {
+            const auto& section = g[e];
+            auto    u = boost::source(e, g);
+            auto    v = boost::target(e, g);
+            log << "relaxed " << section.from << "(" << toString(d.at(u).time) << ") <- ";
+            log << section.routeid.linen << "." << section.routeid.routen;
+            log << " <- " << section.to << "(" << toString(d.at(v).time) << ")" << std::endl;
+        }
+        void edge_not_relaxed(const EdgeDesc& e, const Graph& g) {
+            const auto& section = g[e];
+            log << "not relaxed " << section.from << " <- " << section.routeid.linen << "." << section.routeid.routen;
+            log << " <- " << section.to << std::endl;
+        }
+        void finish_vertex(const VertexDesc& u, const Graph& g) {
+            log << "finish " << g[u] << std::endl;
+        }
+    private:
+        Log&                log;
+        const DistanceMap&  d;
+        const WeightMap&    w;
+    };
+
+
     auto    compare = [](const StopTime& stopta, const StopTime& stoptb) {
-//        std::clog << "\t" << stopta.routeid.linen << "." << stopta.routeid.routen << "\t";
-//        std::clog << toString(stopta.time) << "\t";
-//        std::clog << "\t" << stoptb.routeid.linen << "." << stoptb.routeid.routen << "\t";
-//        std::clog << toString(stoptb.time) << "\t";
-//        std::clog << (stopta.time > stoptb.time + adjust(stopta.routeid, stoptb.routeid));
-//        std::clog << std::endl;
+        auto&   log = Logger{}.log("debug");
+
+        log << "\t" << stopta.routeid.linen << "." << stopta.routeid.routen << "\t";
+        log << toString(stopta.time) << "\t>";
+        log << "\t" << stoptb.routeid.linen << "." << stoptb.routeid.routen << "\t";
+        log << toString(stoptb.time) << "\t? ";
+        log << (stopta.time > stoptb.time + adjust(stopta.routeid, stoptb.routeid));
+        log << std::endl;
 
         return stopta.time > stoptb.time + adjust(stopta.routeid, stoptb.routeid);
     };
@@ -92,10 +132,13 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
                 fromTime = *fromIt;
             }
         }
-//        std::clog << stopt.routeid.linen << "." << stopt.routeid.routen << "\t";
-//        std::clog << toString(stopt.time) << "\t";
-//        std::clog << sectiont.routeid.linen << "." << sectiont.routeid.routen << "\t";
-//        std::clog << toString(fromTime) << std::endl;
+
+        auto&   log = Logger{}.log("debug");
+
+        log << stopt.routeid.linen << "." << stopt.routeid.routen << ", ";
+        log << toString(stopt.time) << "\t<-\t";
+        log << sectiont.routeid.linen << "." << sectiont.routeid.routen << ", ";
+        log << toString(fromTime) << std::endl;
 
         return StopTime{sectiont.routeid, fromTime};
     };
@@ -118,6 +161,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
 //        std::clog << std::endl;
     });
 
+    Visitor vis(d,w);
     auto    u = stopMap_[to];
     adjustDelay = delay;
     boost::dijkstra_shortest_paths(
@@ -129,7 +173,8 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
             distance_compare(compare).
             distance_combine(combine).
             distance_zero(StopTime{{}, arrive}).
-            distance_inf(StopTime{{}, minusInf}));
+            distance_inf(StopTime{{}, minusInf}).
+            visitor(vis));
 
     auto    edge_list = [this](VertexDesc u, VertexDesc v) {
         std::vector<EdgeDesc>   rv;
