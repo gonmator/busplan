@@ -73,6 +73,10 @@ public:
         assert(day < 7);
         return schedules_.at(day).getArriveTime(stopIndex(from), leave, stopIndex(to));
     }
+    Time getLeaveTime(Day day, const Stop& from, const Stop& to, Time arrive) const {
+        assert(day < 7);
+        return schedules_.at(day).getLeaveTime(stopIndex(from), stopIndex(to), arrive);
+    }
 
 private:
     template <typename InputIt>

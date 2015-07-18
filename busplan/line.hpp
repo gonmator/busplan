@@ -39,6 +39,9 @@ public:
     Time getArriveTime(Day day, const RouteName& routen, const Stop& from, Time leave, const Stop& to) const {
         return routes_.at(routen).getArriveTime(day, from, leave, to);
     }
+    Time getLeaveTime(Day day, const RouteName& routen, const Stop& from, const Stop& to, Time leave) const {
+        return routes_.at(routen).getLeaveTime(day, from, to, leave);
+    }
     std::string getRouteDescription(const RouteName& routen) const {
         return routes_.at(routen).description();
     }

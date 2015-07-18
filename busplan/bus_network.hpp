@@ -52,15 +52,13 @@ private:
         Time    time;
     };
     struct SectionTime {
-        SectionTime(RouteId rid, TimeLine tl): routeid{std::move(rid)}, stopTimes{std::move(tl)}, diftime{} {
-        }
-        SectionTime(RouteId rid, DifTime dt): routeid{std::move(rid)}, stopTimes{}, diftime{std::move(dt)} {
+        SectionTime(RouteId rid, Stop from, Stop to): routeid{std::move(rid)}, from{std::move(from)}, to{std::move(to)} {
         }
         SectionTime() = default;
 
-        RouteId     routeid;
-        TimeLine    stopTimes;
-        DifTime     diftime;
+        RouteId routeid;
+        Stop    from;
+        Stop    to;
     };
     using Graph = boost::adjacency_list<
         boost::multisetS, boost::vecS, boost::directedS, Stop, Section>;

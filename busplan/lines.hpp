@@ -70,6 +70,12 @@ public:
         }
         return lines_.at(routeid.linen).getArriveTime(day, routeid.routen, from, leave, to);
     }
+    Time getLeaveTime(Day day, const RouteId& routeid, const Stop& from, const Stop& to, Time arrive) const {
+        if (routeid == walkingRouteId) {
+            return ::getLeaveTime(walkingTimes_, from, to, arrive);
+        }
+        return lines_.at(routeid.linen).getLeaveTime(day, routeid.routen, from, to, arrive);
+    }
     std::string getRouteDescription(const RouteId& routeid) const {
         if (routeid == walkingRouteId) {
             return "(walking)";

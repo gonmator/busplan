@@ -37,7 +37,8 @@ public:
         return timeLines_[timeLineIndex][stopIndex];
     }
 
-    const TimeLine* lowerBoundTimeLine(size_t stopIndex, Time time) const;
+    const TimeLine* notLessThanTimeLine(size_t stopIndex, Time time) const;
+    const TimeLine* notGreaterThanTimeLine(size_t stopIndex, Time time) const;
 private:
     std::vector<TimeLine>   timeLines_;
     size_t                  stopCount_;

@@ -32,11 +32,11 @@ BusNetwork::BusNetwork(Lines&& lines): lines_{std::move(lines)}, graph_{}, stopM
         for (const auto& stepsByRoute: stepsByLine.second) {
             const auto& routen = stepsByRoute.first;
             for (const auto& step: stepsByRoute.second) {
-                const auto& from = step.first;
-                const auto& to = step.second;
+                const auto& to = step.first;
+                const auto& from = step.second;
                 /*auto    e =*/ boost::add_edge(
-                    stopMap_.at(from),
                     stopMap_.at(to),
+                    stopMap_.at(from),
                     Section{RouteId{linen, routen}, from, to}, graph_);
 //                std::clog << "edge " << e.first << ": " << from << " -> " << to << std::endl;
             }
@@ -46,9 +46,9 @@ BusNetwork::BusNetwork(Lines&& lines): lines_{std::move(lines)}, graph_{}, stopM
         const auto& from = walkingTime.first.first;
         const auto& to = walkingTime.first.second;
         boost::add_edge(
-            stopMap_.at(from), stopMap_.at(to), Section{walkingRouteId, from, to}, graph_);
+            stopMap_.at(to), stopMap_.at(from), Section{walkingRouteId, from, to}, graph_);
         boost::add_edge(
-            stopMap_.at(to), stopMap_.at(from), Section{walkingRouteId, to, from}, graph_);
+            stopMap_.at(from), stopMap_.at(to), Section{walkingRouteId, to, from}, graph_);
     }
 }
 
@@ -68,34 +68,37 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     struct Visitor {
         Visitor(const DistanceMap& d, const WeightMap& w): log{Logger{}.log("debug")}, d{d}, w{w} {}
 
-        void initialize_vertex(const VertexDesc& u, const Graph& g) {
+        void initialize_vertex(VertexDesc u, const Graph& g) {
             log << "initialize " << g[u] << std::endl;
         }
-        void examine_vertex(const VertexDesc& u, const Graph& g) {
+        void examine_vertex(VertexDesc u, const Graph& g) {
             log << "examine " << g[u] << std::endl;
         }
         void examine_edge(const EdgeDesc& e, const Graph& g) {
             const auto& section = g[e];
-            log << "examine " << section.from << " <- " << section.routeid.linen << "." << section.routeid.routen;
-            log << " <- " << section.to << std::endl;
+            log << "examine " << section.to << " <- " << section.routeid.linen << "." << section.routeid.routen;
+            log << " <- " << section.from << std::endl;
         }
-        void discover_vertex(const VertexDesc& u, const Graph& g) {
+        void discover_vertex(VertexDesc u, const Graph& g) {
             log << "discover " << g[u] << std::endl;
         }
         void edge_relaxed(const EdgeDesc& e, const Graph& g) {
             const auto& section = g[e];
             auto    u = boost::source(e, g);
             auto    v = boost::target(e, g);
-            log << "relaxed " << section.from << "(" << toString(d.at(u).time) << ") <- ";
+            log << "relaxed " << section.to << "(" << toString(d.at(u).time) << ") <- ";
             log << section.routeid.linen << "." << section.routeid.routen;
-            log << " <- " << section.to << "(" << toString(d.at(v).time) << ")" << std::endl;
+            log << " <- " << section.from << "(" << toString(d.at(v).time) << ")" << std::endl;
         }
         void edge_not_relaxed(const EdgeDesc& e, const Graph& g) {
             const auto& section = g[e];
-            log << "not relaxed " << section.from << " <- " << section.routeid.linen << "." << section.routeid.routen;
-            log << " <- " << section.to << std::endl;
+            auto    u = boost::source(e, g);
+            auto    v = boost::target(e, g);
+            log << "not relaxed " << section.to << "(" << toString(d.at(u).time) << ") <- ";
+            log << section.routeid.linen << "." << section.routeid.routen;
+            log << " <- " << section.from << "(" << toString(d.at(v).time) << ")" << std::endl;
         }
-        void finish_vertex(const VertexDesc& u, const Graph& g) {
+        void finish_vertex(VertexDesc u, const Graph& g) {
             log << "finish " << g[u] << std::endl;
         }
     private:
@@ -105,60 +108,19 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     };
 
 
-    auto    compare = [](const StopTime& stopta, const StopTime& stoptb) {
-        auto&   log = Logger{}.log("debug");
-
-        log << "\t" << stopta.routeid.linen << "." << stopta.routeid.routen << "\t";
-        log << toString(stopta.time) << "\t>";
-        log << "\t" << stoptb.routeid.linen << "." << stoptb.routeid.routen << "\t";
-        log << toString(stoptb.time) << "\t? ";
-        log << (stopta.time > stoptb.time + adjust(stopta.routeid, stoptb.routeid));
-        log << std::endl;
-
+    auto    compare = [](const StopTime& stopta, const StopTime& stoptb) -> bool {
         return stopta.time > stoptb.time + adjust(stopta.routeid, stoptb.routeid);
     };
-    auto    combine = [](const StopTime& stopt, const SectionTime& sectiont) {
-        Time    toTime = stopt.time - adjust(stopt.routeid, sectiont.routeid);
-        Time    fromTime = minusInf;
-        if (sectiont.routeid == walkingRouteId) {
-            fromTime = toTime - sectiont.diftime;
-        } else {
-            auto    fromIt = std::lower_bound(
-                sectiont.stopTimes.crbegin(),
-                sectiont.stopTimes.crend(),
-                toTime,
-                std::greater<Time>{});
-            if (fromIt != sectiont.stopTimes.crend()) {
-                fromTime = *fromIt;
-            }
-        }
-
-        auto&   log = Logger{}.log("debug");
-
-        log << stopt.routeid.linen << "." << stopt.routeid.routen << ", ";
-        log << toString(stopt.time) << "\t<-\t";
-        log << sectiont.routeid.linen << "." << sectiont.routeid.routen << ", ";
-        log << toString(fromTime) << std::endl;
-
-        return StopTime{sectiont.routeid, fromTime};
+    auto    combine = [this, day](const StopTime& stopt, const SectionTime& sectiont) -> StopTime {
+        Time    arrive = stopt.time - adjust(stopt.routeid, sectiont.routeid);
+        auto    leave = this->lines_.getLeaveTime(day, sectiont.routeid, sectiont.from, sectiont.to, arrive);
+        return StopTime{sectiont.routeid, leave};
     };
 
     auto    edger = boost::edges(graph_);
     std::for_each(edger.first, edger.second, [this, &w, day](const EdgeDesc& ed) {
         const auto& section = graph_[ed];
-        if (section.routeid == walkingRouteId) {
-            w[ed] = SectionTime{
-                section.routeid,
-                lines_.walkingTimes().at(WalkingStep{section.from, section.to})};
-        } else {
-            w[ed] = SectionTime{
-                section.routeid,
-                lines_.getStopTimes(day, section.routeid, section.to)};
-        }
-//        std::clog << "weight " << ed << ": ";
-//        std::clog << toString(*w[ed].stopTimes.cbegin());
-//        std::clog << " ~ " << toString(*(w[ed].stopTimes.cend() - 1));
-//        std::clog << std::endl;
+        w[ed] = SectionTime{section.routeid, section.from, section.to};
     });
 
     Visitor vis(d,w);
@@ -204,7 +166,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
             return compare(combine(dpred, w[e1]), combine(dpred, w[e2]));
         });
         auto        section = graph_[*eit];
-        const auto& to = section.from;
+        const auto& to = section.to;
         const auto& routeid = section.routeid;
         rv.push_back(
             Node{

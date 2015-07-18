@@ -23,4 +23,9 @@ inline Time getArriveTime(const WalkingTimes& walkingTimes, const Stop& from, Ti
     return leave + walkingTimes.at(WalkingStep{from, to});
 }
 
+inline Time getLeaveTime(const WalkingTimes& walkingTimes, const Stop& from, const Stop& to, Time arrive) {
+    return arrive - walkingTimes.at(WalkingStep{from, to});
+}
+
+
 #endif // WALKING_HPP

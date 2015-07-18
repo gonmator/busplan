@@ -27,6 +27,7 @@ using Time = Clock::time_point;
 using DifTime = Time::duration;
 
 const Time  minusInf{std::chrono::hours{-24}};
+const Time  plusInf{std::chrono::hours{24}};
 
 inline DifTime toDifTime(std::string str) {
     unsigned long   m = 0;
