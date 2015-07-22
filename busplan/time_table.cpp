@@ -46,12 +46,13 @@ private:
 using ConstTimeTableReverseIterator = std::reverse_iterator<ConstTimeTableIterator>;
 
 
-void TimeTable::addTimeLine(const TimeLine& timeLine) {
+void TimeTable::addTimeLine(TimeLine timeLine) {
     assert(timeLine.size() == stopCount_);
     if (timeLine.size() != stopCount_) {
         throw std::out_of_range("TimeTable::addTimeLine: invalid time lines size");
     }
-    timeLines_.insert(std::lower_bound(timeLines_.cbegin(), timeLines_.cend(), timeLine), timeLine);
+    auto    it = std::lower_bound(timeLines_.begin(), timeLines_.end(), timeLine);
+    timeLines_.insert(it, std::move(timeLine));
 }
 
 

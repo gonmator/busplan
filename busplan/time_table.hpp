@@ -21,7 +21,7 @@ public:
         return timeLines_.size();
     }
 
-    void addTimeLine(const TimeLine& timeLine);
+    void addTimeLine(TimeLine timeLine);
 
     const TimeLine& getTimeLine(size_t timeLineIndex) const {
         assert(timeLineIndex < timeLines_.size());

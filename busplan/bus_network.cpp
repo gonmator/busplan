@@ -66,7 +66,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     WeightMap       w;
 
     struct Visitor {
-        Visitor(const DistanceMap& d, const WeightMap& w): log{Logger{}.log("debug")}, d{d}, w{w} {}
+        Visitor(const DistanceMap& d, const WeightMap& w): log(Logger{}.log("debug")), d{d}, w{w} {}
 
         void initialize_vertex(VertexDesc u, const Graph& g) {
             log << "initialize " << g[u] << std::endl;
