@@ -193,10 +193,15 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
 BusNetwork::Table BusNetwork::table(Day day, const Stop& from, const Stop& to, Details details, DifTime delay) {
     Table   rv;
     auto    timeline = lines_.getStopTimes(day, to);
+    Time    lastLeave{minusInf};
     for (const auto& time: timeline) {
         auto    nlist = planFromArrive(day, from, to, time + delay, details, delay);
         if (!nlist.empty()) {
-            rv.push_back(nlist);
+            auto    leave = nlist.front().from.time;
+            if (leave > lastLeave) {
+                rv.push_back(nlist);
+                lastLeave = leave;
+            }
         }
     }
 
