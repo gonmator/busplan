@@ -56,4 +56,5 @@ OTHER_FILES += \
     networks/busplan.cfg \
     networks/lux/18.cfg \
     networks/lux/26.cfg \
-    networks/lux/13.cfg
+    networks/lux/13.cfg \
+    networks/lux/5.cfg
