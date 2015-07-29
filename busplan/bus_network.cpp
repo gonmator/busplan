@@ -55,6 +55,12 @@ BusNetwork::BusNetwork(Lines&& lines): lines_{std::move(lines)}, graph_{}, stopM
 BusNetwork::NodeList BusNetwork::planFromArrive(
     Day day, const Stop& from, const Stop& to, Time arrive, Details details, DifTime delay) {
 
+    return planFromArrive(day, from, to, StopTime{{}, arrive}, details, delay);
+}
+
+BusNetwork::NodeList BusNetwork::planFromArrive(
+    Day day, const Stop& from, const Stop& to, StopTime arriveBy, Details details, DifTime delay) {
+
     BusNetwork::NodeList    rv;
 
     using DistanceMap = std::map<VertexDesc, StopTime>;
@@ -109,7 +115,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
 
 
     auto    compare = [](const StopTime& stopta, const StopTime& stoptb) -> bool {
-        return stopta.time > stoptb.time + adjust(stopta.routeid, stoptb.routeid);
+        return stopta.time > stoptb.time /*+ adjust(stopta.routeid, stoptb.routeid)*/;
     };
     auto    combine = [this, day](const StopTime& stopt, const SectionTime& sectiont) -> StopTime {
         Time    arrive = stopt.time - adjust(stopt.routeid, sectiont.routeid);
@@ -134,7 +140,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
             weight_map(boost::associative_property_map<WeightMap>(w)).
             distance_compare(compare).
             distance_combine(combine).
-            distance_zero(StopTime{{}, arrive}).
+            distance_zero(std::move(arriveBy)).
             distance_inf(StopTime{{}, minusInf}).
             visitor(vis));
 
@@ -194,13 +200,16 @@ BusNetwork::Table BusNetwork::table(Day day, const Stop& from, const Stop& to, D
     Table   rv;
     auto    timeline = lines_.getStopTimes(day, to);
     Time    lastLeave{minusInf};
+    Time    lastArrive{plusInf};
     for (const auto& time: timeline) {
         auto    nlist = planFromArrive(day, from, to, time + delay, details, delay);
         if (!nlist.empty()) {
             auto    leave = nlist.front().from.time;
-            if (leave > lastLeave) {
+            auto    arrive = nlist.back().to.time;
+            if (leave > lastLeave || arrive == lastArrive) {
                 rv.push_back(nlist);
                 lastLeave = leave;
+                lastArrive = arrive;
             }
         }
     }

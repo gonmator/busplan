@@ -14,6 +14,10 @@
 
 class BusNetwork {
 public:
+    struct StopTime {
+        RouteId routeid;
+        Time    time;
+    };
     struct RoutePoint {
         Stop        stop;
         Time        time;
@@ -37,6 +41,8 @@ public:
     }
     NodeList planFromArrive(
         Day day, const Stop& from, const Stop& to, Time arrive, Details details, DifTime delay);
+    NodeList planFromArrive(
+        Day day, const Stop& from, const Stop& to, StopTime arriveBy, Details details, DifTime delay);
     Table table(Day day, const Stop& from, const Stop& to, Details details, DifTime delay);
 
     std::string routeName(const RouteId& routeid) const;
@@ -46,10 +52,6 @@ private:
         RouteId routeid;
         Stop    from;
         Stop    to;
-    };
-    struct StopTime {
-        RouteId routeid;
-        Time    time;
     };
     struct SectionTime {
         SectionTime(RouteId rid, Stop from, Stop to): routeid{std::move(rid)}, from{std::move(from)}, to{std::move(to)} {

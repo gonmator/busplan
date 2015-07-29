@@ -57,4 +57,4 @@ OTHER_FILES += \
     networks/lux/18.cfg \
     networks/lux/26.cfg \
     networks/lux/13.cfg \
-    networks/lux/5.cfg
+    networks/lux/22.cfg
