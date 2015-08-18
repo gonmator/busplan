@@ -26,6 +26,7 @@ public:
 
     std::pair<Time, bool> findArriveTime(size_t fromIndex, Time leave, size_t toIndex) const;
     std::pair<Time, bool> findLeaveTime(size_t fromIndex, size_t toIndex, Time arrive) const;
+    std::pair<Time, bool> findBoundArriveTime(size_t toIndex, Time arrive) const;
 
 private:
     TimeTable   timeTable_;

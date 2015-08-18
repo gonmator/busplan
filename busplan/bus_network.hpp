@@ -14,10 +14,6 @@
 
 class BusNetwork {
 public:
-    struct StopTime {
-        RouteId routeid;
-        Time    time;
-    };
     struct RoutePoint {
         Stop        stop;
         Time        time;
@@ -39,15 +35,15 @@ public:
     RouteNames getRouteNames(const LineName& linen) const {
         return lines_.getRouteNames(linen);
     }
+
     NodeList planFromArrive(
         Day day, const Stop& from, const Stop& to, Time arrive, Details details, DifTime delay);
-    NodeList planFromArrive(
-        Day day, const Stop& from, const Stop& to, StopTime arriveBy, Details details, DifTime delay);
     Table table(Day day, const Stop& from, const Stop& to, Details details, DifTime delay);
 
     std::string routeName(const RouteId& routeid) const;
-private:
 
+private:
+    using StopTime = TimeByRoute;
     struct Section {
         RouteId routeid;
         Stop    from;
@@ -66,6 +62,9 @@ private:
         boost::multisetS, boost::vecS, boost::directedS, Stop, Section>;
     using VertexDesc = boost::graph_traits<Graph>::vertex_descriptor;
     using EdgeDesc = boost::graph_traits<Graph>::edge_descriptor;
+
+    NodeList planFromArrive(
+        Day day, const Stop& from, const Stop& to, TimeByRoute arriveBy, Details details, DifTime delay);
 
     void init();
     static NodeList fromStepToTransferList(const NodeList& stepList);

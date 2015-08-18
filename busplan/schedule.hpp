@@ -28,6 +28,7 @@ public:
 
     Time getArriveTime(size_t fromIx, Time leave, size_t toIx) const;
     Time getLeaveTime(size_t fromIx, size_t toIx, Time arrive) const;
+    Time getBoundArriveTime(size_t toIx, Time arrive) const;
 
 private:
     using FragmentIndex = std::pair<size_t, size_t>;

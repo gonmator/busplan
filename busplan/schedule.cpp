@@ -47,3 +47,17 @@ Time Schedule::getLeaveTime(size_t fromIx, size_t toIx, Time arrive) const {
     }
     return leave;
 }
+
+Time Schedule::getBoundArriveTime(size_t toIx, Time arrive) const {
+    Time    boundArrive{minusInf};
+    for (const auto& fragmentp: fragments_) {
+        auto    startIx = getStopIndex(fragmentp.first);
+        if (isStopInFragment(fragmentp.first, toIx)) {
+            auto    arrive_result = fragmentp.second.findBoundArriveTime(toIx - startIx, arrive);
+            if (arrive_result.second && arrive_result.first > boundArrive) {
+                boundArrive = arrive_result.first;
+            }
+        }
+    }
+    return boundArrive;
+}

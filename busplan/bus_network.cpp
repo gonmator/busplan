@@ -55,11 +55,25 @@ BusNetwork::BusNetwork(Lines&& lines): lines_{std::move(lines)}, graph_{}, stopM
 BusNetwork::NodeList BusNetwork::planFromArrive(
     Day day, const Stop& from, const Stop& to, Time arrive, Details details, DifTime delay) {
 
-    return planFromArrive(day, from, to, StopTime{{}, arrive}, details, delay);
+    auto                    timesByRoute = lines_.getBoundArriveTimesByRoute(day, to, arrive);
+    Time                    bestLeave{minusInf};
+    BusNetwork::NodeList    rv;
+    for (const auto& arriveBy: timesByRoute) {
+        auto    nlist = planFromArrive(day, from, to, arriveBy, details, delay);
+        if (!nlist.empty()) {
+            auto    leave = nlist.front().from.time;
+            if (leave > bestLeave || leave == bestLeave && nlist.size() < rv.size()) {
+                rv = nlist;
+                bestLeave = leave;
+            }
+        }
+    }
+
+    return rv;
 }
 
 BusNetwork::NodeList BusNetwork::planFromArrive(
-    Day day, const Stop& from, const Stop& to, StopTime arriveBy, Details details, DifTime delay) {
+    Day day, const Stop& from, const Stop& to, TimeByRoute arriveBy, Details details, DifTime delay) {
 
     BusNetwork::NodeList    rv;
 
@@ -141,7 +155,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
             distance_compare(compare).
             distance_combine(combine).
             distance_zero(std::move(arriveBy)).
-            distance_inf(StopTime{{}, minusInf}).
+            distance_inf(StopTime{minusInf}).
             visitor(vis));
 
     auto    edge_list = [this](VertexDesc u, VertexDesc v) {
@@ -198,11 +212,11 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
 
 BusNetwork::Table BusNetwork::table(Day day, const Stop& from, const Stop& to, Details details, DifTime delay) {
     Table   rv;
-    auto    timeline = lines_.getStopTimes(day, to);
+    auto    timeline = lines_.getStopTimesByRoute(day, to);
     Time    lastLeave{minusInf};
     Time    lastArrive{plusInf};
-    for (const auto& time: timeline) {
-        auto    nlist = planFromArrive(day, from, to, time + delay, details, delay);
+    for (const auto& timeByRoute: timeline) {
+        auto    nlist = planFromArrive(day, from, to, timeByRoute, details, delay);
         if (!nlist.empty()) {
             auto    leave = nlist.front().from.time;
             auto    arrive = nlist.back().to.time;
