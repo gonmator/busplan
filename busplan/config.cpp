@@ -102,7 +102,7 @@ void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Route& rout
         try {
             read(cfg, sname + "." + ttstr, route.stops(), dtimeLines, route.schedule(day));
         } catch (const std::out_of_range&) {
-            std::cerr << "Error in day: " << day << "(" << sname << ")" << std::endl;
+            std::cerr << "Error in day: " << day << " (" << sname << ")" << std::endl;
         }
     }
 }
