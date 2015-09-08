@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
         ("to", po::value<std::string>(&toStop)->value_name("BUS-STOP"))
         ("arrive", po::value<Time>(&arriveTime)->value_name("TIME"))
         ("day", po::value<Day>(&day)->value_name("DAY")->default_value(Day{"today"}))
-        ("details", po::value<Details>(&details)->value_name("DETAILS")->default_value(Details::steps))
+        ("details", po::value<Details>(&details)->value_name("DETAILS")->default_value(Details::transfers))
         ("delay", po::value<std::string>(&fakeDelay)->value_name("DELAY")->default_value("0:05"))
         ("logfile", po::value<std::string>(&logFile)->value_name("PATH"))
         ;
