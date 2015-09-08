@@ -8,8 +8,8 @@
 #include "walking.hpp"
 
 
-void read(const Utility::IniDoc::Doc&, const std::string&, Line&);
-void read(const Utility::IniDoc::Doc&, const std::string&, Route&);
+void read(const Utility::IniDoc::Doc&, const std::string&, Line&, const StopDescriptions&);
+void read(const Utility::IniDoc::Doc&, const std::string&, Route&, const StopDescriptions&);
 void readPlatforms(const Utility::IniDoc::Doc&, const std::string&, Route&);
 void read(const Utility::IniDoc::Doc&, const std::string&, const Stops&, DifTimeLines&dtlines);
 void read(const Utility::IniDoc::Doc&, const std::string&, const Stops&, const DifTimeLines&, Schedule&);
@@ -43,7 +43,7 @@ void read(const Utility::IniDoc::Doc &cfg, Lines& lines, StopDescriptions& sds) 
 
             auto&   line = lines.addLine(lstr);
             try {
-                read(cfg, lstr, line);
+                read(cfg, lstr, line, sds);
             } catch (const std::out_of_range&) {
                 std::cerr << "Error in line: " << lstr << std::endl;
                 lines.removeLine(lstr);
@@ -57,14 +57,14 @@ void read(const Utility::IniDoc::Doc &cfg, Lines& lines, StopDescriptions& sds) 
     read(cfg, lines.walkingTimes());
 }
 
-void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Line& line) {
+void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Line& line, const StopDescriptions& stopDescs) {
     const auto& routelist = cfg.at(sname).at("routes").items();
     for (const auto& rstr: routelist) {
 //        std::cout << "    Route: " << rstr << std::endl;
 
         auto&   route = line.addRoute(rstr);
         try {
-            read(cfg, sname + "." + rstr, route);
+            read(cfg, sname + "." + rstr, route, stopDescs);
         } catch (const std::out_of_range&) {
             std::cerr << "Error in route: " << rstr << " (" << sname << ")" << std::endl;
             line.removeRoute(rstr);
@@ -72,12 +72,17 @@ void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Line& line)
     }
 }
 
-void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Route& route) {
+void read(const Utility::IniDoc::Doc& cfg, const std::string& sname, Route& route, const StopDescriptions& stopDescs) {
     route.setDescription(cfg.at(sname).at("description").string());
 
 //    std::cout << "        Stops: " << cfg.at(sname).at("stops").string() << std::endl;
     const auto& stoplist = cfg.at(sname).at("stops").items();
     for (const auto& sstr: stoplist) {
+        if (stopDescs.find(sstr) == stopDescs.cend()) {
+            std::cerr << "Stop " << sstr << " in route " << sname << " is not in [stop] section. Skipping route";
+            std::cerr << std::endl;
+            return ;
+        }
         route.addStop(strip(sstr));
     }
 
