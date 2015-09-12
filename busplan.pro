@@ -39,7 +39,9 @@ HEADERS += \
     busplan/details.hpp \
     busplan/fragment.hpp \
     busplan/time_table.hpp \
-    busplan/logger.hpp
+    busplan/logger.hpp \
+    busplan/routeid.hpp \
+    busplan/time_for_route.hpp
 
 
 unix|win32: LIBS += -lboost_program_options

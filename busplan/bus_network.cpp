@@ -9,15 +9,114 @@
 #include <iostream>
 
 namespace {
+
 DifTime adjustDelay;
 const DifTime noDelay{std::chrono::minutes{0}};
-}
 
 inline DifTime adjust(const RouteId& rida, const RouteId& ridb) {
     if (rida == ridb || rida == walkingRouteId) {
         return DifTime{0};
     }
     return adjustDelay;
+}
+
+
+class GraphDistance {
+public:
+    using Distances = std::map<RouteId, TimeForRoute>;
+    using Distance = Distances::value_type;
+
+    GraphDistance() = default;
+    GraphDistance(const GraphDistance& gd) = default;
+    GraphDistance(GraphDistance&& gd) = default;
+
+    GraphDistance& operator=(const GraphDistance& gd) {
+        assign(gd);
+        return *this;
+    }
+    GraphDistance& operator=(GraphDistance&& gd) {
+        assign(std::move(gd));
+        return *this;
+    }
+
+    void assign(const GraphDistance& gd) {
+        for (const auto& vt: gd.distances_) {
+            distances_[vt.first] = vt.second;
+        }
+    }
+    void assign(GraphDistance&& gd) {
+        for (const auto& vt: gd.distances_) {
+            distances_[vt.first] = std::move(vt.second);
+        }
+    }
+
+    Distances::const_iterator cbegin() const {
+        return distances_.cbegin();
+    }
+    Distances::const_iterator begin() const {
+        return cbegin();
+    }
+    Distances::iterator begin() {
+        return distances_.begin();
+    }
+
+    Distances::const_iterator cend() const {
+        return distances_.cend();
+    }
+    Distances::const_iterator end() const {
+        return cend();
+    }
+    Distances::iterator end() {
+        return distances_.end();
+    }
+
+    Distances::const_iterator find(const RouteId& routeid) const {
+        return distances_.find(routeid);
+    }
+    Distances::iterator find(const RouteId& routeid) {
+        return distances_.find(routeid);
+    }
+
+    TimeForRoute& operator[](const RouteId& routeid) {
+        return distances_[routeid];
+    }
+
+private:
+    Distances   distances_;
+};
+
+template <typename TCompare>
+inline bool compare(const GraphDistance& gd1, const GraphDistance& gd2, TCompare tcomp) {
+    for (const auto& d1: gd1) {
+        auto    it2 = gd2.find(d1.first);
+        if (it2 == gd2.cend()) {
+            return true;
+        }
+        if (tcomp(d1.second.time, it2->second.time)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+template <typename TCompare, typename TGet, typename TAdjust>
+inline GraphDistance combine(
+    const GraphDistance& gd, const BusNetwork::Section& section, TCompare tcomp, TGet tget, TAdjust tadjust) {
+
+    GraphDistance   rv;
+    for (const auto& d: gd) {
+        auto    arrive = d.second.time - tadjust(d.first, section.routeid);
+        auto    leave = tget(section.routeid, section.from, section.to, arrive);
+        auto    rit = rv.find(section.routeid);
+        if (rit == rv.cend() || tcomp(rit->second.time), leave) {
+            rv[section.routeid] = TimeForRoute{d.first, leave};
+        }
+    }
+    return rv;
+}
+
+
+
 }
 
 BusNetwork::BusNetwork(Lines&& lines): lines_{std::move(lines)}, graph_{}, stopMap_{} {
@@ -62,7 +161,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
         auto    nlist = planFromArrive(day, from, to, arriveBy, details, delay);
         if (!nlist.empty()) {
             auto    leave = nlist.front().from.time;
-            if (leave > bestLeave || leave == bestLeave && nlist.size() < rv.size()) {
+            if (leave > bestLeave || (leave == bestLeave && nlist.size()) < rv.size()) {
                 rv = nlist;
                 bestLeave = leave;
             }
@@ -73,13 +172,13 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
 }
 
 BusNetwork::NodeList BusNetwork::planFromArrive(
-    Day day, const Stop& from, const Stop& to, TimeByRoute arriveBy, Details details, DifTime delay) {
+    Day day, const Stop& from, const Stop& to, TimeForRoute arriveBy, Details details, DifTime delay) {
 
     BusNetwork::NodeList    rv;
 
     using DistanceMap = std::map<VertexDesc, StopTime>;
     using PredecessorMap = std::map<VertexDesc, VertexDesc>;
-    using WeightMap = std::map<EdgeDesc, SectionTime>;
+    using WeightMap = std::map<EdgeDesc, Section>;
 
     PredecessorMap  p;
     DistanceMap     d;
@@ -131,7 +230,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     auto    compare = [](const StopTime& stopta, const StopTime& stoptb) -> bool {
         return stopta.time > stoptb.time /*+ adjust(stopta.routeid, stoptb.routeid)*/;
     };
-    auto    combine = [this, day](const StopTime& stopt, const SectionTime& sectiont) -> StopTime {
+    auto    combine = [this, day](const StopTime& stopt, const Section& sectiont) -> StopTime {
         Time    arrive = stopt.time - adjust(stopt.routeid, sectiont.routeid);
         auto    leave = this->lines_.getLeaveTime(day, sectiont.routeid, sectiont.from, sectiont.to, arrive);
         return StopTime{sectiont.routeid, leave};
@@ -140,7 +239,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     auto    edger = boost::edges(graph_);
     std::for_each(edger.first, edger.second, [this, &w, day](const EdgeDesc& ed) {
         const auto& section = graph_[ed];
-        w[ed] = SectionTime{section.routeid, section.from, section.to};
+        w[ed] = Section{section.routeid, section.from, section.to};
     });
 
     Visitor vis(d,w);

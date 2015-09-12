@@ -7,57 +7,16 @@
 #include <vector>
 
 #include "line.hpp"
+#include "routeid.hpp"
 #include "stop.hpp"
+#include "time_for_route.hpp"
 #include "walking.hpp"
 
-using LineName = std::string;
-using LineNames = std::vector<LineName>;
 using StepsByLine = std::pair<LineName, StepsRoutes>;
 using StepsLines = std::vector<StepsByLine>;
 
-struct RouteId {
-    RouteId(LineName ln, RouteName rn): linen{std::move(ln)}, routen{std::move(rn)} {}
-    RouteId() = default;
-
-    LineName    linen;
-    RouteName   routen;
-};
-inline bool operator ==(const RouteId& rida, const RouteId& ridb) {
-    return rida.linen == ridb.linen && rida.routen == ridb.routen;
-}
-inline bool operator !=(const RouteId& rida, const RouteId& ridb) {
-    return !(rida == ridb);
-}
-inline bool operator <(const RouteId& rida, const RouteId& ridb) {
-    return rida.linen < ridb.linen || (rida.linen == ridb.linen && rida.routen < ridb.routen);
-}
 
 const RouteId   walkingRouteId{"__walking__", "__"};
-
-
-struct TimeByRoute {
-    TimeByRoute(LineName lineName, const RouteName routeName, Time time):
-        TimeByRoute(RouteId{std::move(lineName), std::move(routeName)}, time) {
-    }
-    TimeByRoute(RouteId routeid, Time time): routeid{std::move(routeid)}, time{time} {
-    }
-    TimeByRoute(Time time): routeid{}, time{time} {
-    }
-    TimeByRoute() = default;
-    TimeByRoute(const TimeByRoute&) = default;
-    TimeByRoute(TimeByRoute&&) = default;
-    TimeByRoute& operator=(const TimeByRoute&) = default;
-    TimeByRoute& operator=(TimeByRoute&&) = default;
-
-    RouteId routeid;
-    Time    time;
-};
-inline bool operator <(const TimeByRoute& tbra, const TimeByRoute& tbrb) {
-    return tbra.time < tbrb.time || (tbra.time == tbrb.time && tbra.routeid < tbrb.routeid);
-}
-
-
-using TimesByRoute = std::vector<TimeByRoute>;
 
 
 class Lines {
@@ -94,7 +53,7 @@ public:
     }
     TimeLine getStopTimes(Day day, const Stop& stop) const;
 
-    TimesByRoute getStopTimesByRoute(Day day, const Stop& stop) const;
+    TimeForRoutes getStopTimesByRoute(Day day, const Stop& stop) const;
 
     Time getArriveTime(Day day, const RouteId& routeid, const Stop& from, Time leave, const Stop& to) const {
         if (routeid == walkingRouteId) {
@@ -108,7 +67,7 @@ public:
         }
         return lines_.at(routeid.linen).getLeaveTime(day, routeid.routen, from, to, arrive);
     }
-    TimesByRoute getBoundArriveTimesByRoute(Day day, const Stop& to, Time arrive) const;
+    TimeForRoutes getBoundArriveTimesByRoute(Day day, const Stop& to, Time arrive) const;
 
     std::string getRouteDescription(const RouteId& routeid) const {
         if (routeid == walkingRouteId) {

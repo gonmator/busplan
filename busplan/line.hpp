@@ -8,9 +8,8 @@
 #include <vector>
 
 #include "route.hpp"
+#include "routeid.hpp"
 
-using RouteName = std::string;
-using RouteNames = std::vector<RouteName>;
 using StepsByRoute = std::pair<RouteName, Steps>;
 using StepsRoutes = std::vector<StepsByRoute>;
 using TimesByRouteName = std::vector<std::pair<RouteName, Time>>;

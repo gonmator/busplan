@@ -43,16 +43,11 @@ public:
     std::string routeName(const RouteId& routeid) const;
 
 private:
-    using StopTime = TimeByRoute;
+    using StopTime = TimeForRoute;
     struct Section {
-        RouteId routeid;
-        Stop    from;
-        Stop    to;
-    };
-    struct SectionTime {
-        SectionTime(RouteId rid, Stop from, Stop to): routeid{std::move(rid)}, from{std::move(from)}, to{std::move(to)} {
+        Section() = default;
+        Section(RouteId rid, Stop from, Stop to): routeid{std::move(rid)}, from{std::move(from)}, to{std::move(to)} {
         }
-        SectionTime() = default;
 
         RouteId routeid;
         Stop    from;
@@ -64,7 +59,7 @@ private:
     using EdgeDesc = boost::graph_traits<Graph>::edge_descriptor;
 
     NodeList planFromArrive(
-        Day day, const Stop& from, const Stop& to, TimeByRoute arriveBy, Details details, DifTime delay);
+        Day day, const Stop& from, const Stop& to, TimeForRoute arriveBy, Details details, DifTime delay);
 
     void init();
     static NodeList fromStepToTransferList(const NodeList& stepList);
