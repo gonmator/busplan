@@ -65,6 +65,10 @@ public:
         platforms_[stop] = pstr;
     }
 
+    const Stop& getNextStop(const Stop& stop) const {
+        return *std::next(std::find(stops_.cbegin(), stops_.cend(), stop));
+    }
+
     TimeLine getStopTimes(Day day, const Stop& stop) const {
         return schedules_[day].getStopTimes(stopIndex(stop));
     }

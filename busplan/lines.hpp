@@ -48,6 +48,13 @@ public:
     StepsLines getForwardStepsLines() const;
     StepsLines getBackwardStepsLines() const;
 
+    const Stop& getNextStop(const RouteId& routeid, const Stop& stop) const {
+        return getNextStop(routeid.linen, routeid.routen, stop);
+    }
+    const Stop& getNextStop(const LineName& linen, const RouteName& routen, const Stop& stop) const {
+        return lines_.at(linen).getNextStop(routen, stop);
+    }
+
     TimeLine getStopTimes(Day day, const RouteId& routeid, const Stop& stop) const {
         return lines_.at(routeid.linen).getStopTimes(day, routeid.routen, stop);
     }

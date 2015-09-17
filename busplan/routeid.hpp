@@ -2,6 +2,7 @@
 #ifndef ROUTEID_HPP
 #define ROUTEID_HPP
 
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,9 @@ inline bool operator !=(const RouteId& rida, const RouteId& ridb) {
 }
 inline bool operator <(const RouteId& rida, const RouteId& ridb) {
     return rida.linen < ridb.linen || (rida.linen == ridb.linen && rida.routen < ridb.routen);
+}
+inline std::ostream& operator<<(std::ostream& os, const RouteId& routeid) {
+    return os << routeid.linen << "." << routeid.routen;
 }
 
 #endif // ROUTEID_HPP

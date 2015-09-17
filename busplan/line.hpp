@@ -37,6 +37,10 @@ public:
         return routes_.at(routen).getStopTimes(day, stop);
     }
 
+    const Stop& getNextStop(const RouteName& routen, const Stop& stop) const {
+        return routes_.at(routen).getNextStop(stop);
+    }
+
     TimeLine getStopTimes(Day day, const Stop& stop) const;
     TimesByRouteName getStopTimesByRouteName(Day day, const Stop& stop) const;
 
