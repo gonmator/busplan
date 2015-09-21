@@ -197,21 +197,6 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     Day day, const Stop& from, const Stop& to, Time arrive, Details details, DifTime delay) {
 
     return planFromArrive(day, from, to, TimeForRoute{arrive}, details, delay);
-//    auto                    timesByRoute = lines_.getBoundArriveTimesByRoute(day, to, arrive);
-//    Time                    bestLeave{minusInf};
-//    BusNetwork::NodeList    rv;
-//    for (const auto& arriveBy: timesByRoute) {
-//        auto    nlist = planFromArrive(day, from, to, arriveBy, details, delay);
-//        if (!nlist.empty()) {
-//            auto    leave = nlist.front().from.time;
-//            if (leave > bestLeave || (leave == bestLeave && nlist.size()) < rv.size()) {
-//                rv = nlist;
-//                bestLeave = leave;
-//            }
-//        }
-//    }
-
-//    return rv;
 }
 
 BusNetwork::NodeList BusNetwork::planFromArrive(
@@ -286,32 +271,9 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     Visitor vis(d,w);
     auto    u = stopMap_[to];
     adjustDelay = delay;
-//    boost::dijkstra_shortest_paths(
-//        graph_,
-//        u,
-//        boost::predecessor_map(boost::associative_property_map<PredecessorMap>(p)).
-//            distance_map(boost::associative_property_map<DistanceMap>(d)).
-//            weight_map(boost::associative_property_map<WeightMap>(w)).
-//            distance_compare(compare).
-//            distance_combine(combine).
-//            distance_zero(GraphDistance{arriveBy}).
-//            distance_inf(GraphDistance{}).
-//            visitor(vis));
 
     mod_dijkstra_shortest_path(
         graph_, u, w, d, compare, combine, assign, GraphDistance{arriveBy}, GraphDistance{}, vis);
-//    auto    edge_list = [this](VertexDesc u, VertexDesc v) {
-//        std::vector<EdgeDesc>   rv;
-//        auto                    er = boost::out_edges(u, graph_);
-//        auto&                   g = graph_;
-//        std::for_each(er.first, er.second, [&rv, v, &g](EdgeDesc e) {
-//            if (boost::target(e, g) == v) {
-//                rv.push_back(e);
-//            }
-//        });
-//        return rv;
-//    };
-
 
     Stop        stop = from;
     const auto& dv = d.at(stopMap_[stop]);
@@ -338,34 +300,6 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
         stop = nextStop;
     }
 
-//    Time    time = dv.time;
-//    auto    pred = p[v];
-//    while (pred != v && v != u) {
-//        auto    dpred = d.at(pred);
-////        auto    e = boost::edge(pred, v, graph_);
-//        auto    el = edge_list(pred, v);
-//        auto    eit =
-//            std::min_element(el.cbegin(), el.cend(), [pred, &dpred, &w, &combine, &compare](
-//                EdgeDesc e1, EdgeDesc e2) {
-
-//            return compare(combine(dpred, w[e1]), combine(dpred, w[e2]));
-//        });
-//        auto        section = graph_[*eit];
-//        const auto& to = section.to;
-//        const auto& routeid = section.routeid;
-//        rv.push_back(
-//            Node{
-//                {stop, time, lines_.getPlatform(routeid, stop)},
-//                {to, lines_.getArriveTime(day, routeid, stop, time, to), lines_.getPlatform(routeid, to)},
-//                routeid});
-//        stop = graph_[pred];
-//        time = dpred.time;
-//        v = pred;
-//        pred = p[v];
-//    }
-
-//    rv.push_back(Node{RouteId{}, stop, time, {}});
-
     if (details == Details::transfers) {
         return fromStepToTransferList(rv);
     }
@@ -383,13 +317,13 @@ BusNetwork::Table BusNetwork::table(Day day, const Stop& from, const Stop& to, D
     for (const auto& timeByRoute: timeline) {
         auto    nlist = planFromArrive(day, from, to, timeByRoute, details, delay);
         if (!nlist.empty()) {
-            auto    leave = nlist.front().from.time;
-            auto    arrive = nlist.back().to.time;
-            if (leave > lastLeave || arrive == lastArrive) {
+//            auto    leave = nlist.front().from.time;
+//            auto    arrive = nlist.back().to.time;
+//            if (leave > lastLeave || arrive == lastArrive) {
                 rv.push_back(nlist);
-                lastLeave = leave;
-                lastArrive = arrive;
-            }
+//                lastLeave = leave;
+//                lastArrive = arrive;
+//            }
         }
     }
 
