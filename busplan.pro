@@ -41,7 +41,8 @@ HEADERS += \
     busplan/time_table.hpp \
     busplan/logger.hpp \
     busplan/routeid.hpp \
-    busplan/time_for_route.hpp
+    busplan/time_for_route.hpp \
+    busplan/shortest_path.hpp
 
 
 unix|win32: LIBS += -lboost_program_options

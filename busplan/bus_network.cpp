@@ -6,6 +6,7 @@
 
 #include "bus_network.hpp"
 #include "logger.hpp"
+#include "shortest_path.hpp"
 #include "time.hpp"
 
 #include <iostream>
@@ -115,18 +116,26 @@ bool compare(const GraphDistance& gd1, const GraphDistance& gd2, TCompare tcomp)
 
 template <typename TCompare, typename TGet, typename TAdjust>
 GraphDistance combine(
-    const GraphDistance& gd, const BusNetwork::Section& section, TCompare tcomp, TGet tget, TAdjust tadjust) {
+    const GraphDistance& gd, const BusNetwork::Section& section, TCompare tcomp, TGet tget, TAdjust tadjust, Time infinite) {
 
     GraphDistance   rv;
     for (const auto& d: gd) {
         auto    arrive = d.second.time - tadjust(d.first, section.routeid);
         auto    leave = tget(section.routeid, section.from, section.to, arrive);
+        if (leave == infinite) {
+            continue;
+        }
         auto    rit = rv.find(section.routeid);
-        if (rit == rv.cend() || tcomp(rit->second.time, leave)) {
+        if (rit == rv.cend() || tcomp(leave, rit->second.time)) {
             rv[section.routeid] = TimeForRoute{d.first, leave};
         }
     }
     return rv;
+}
+
+inline GraphDistance& assign(GraphDistance& gdl, const GraphDistance& gdr) {
+    gdl.assign(gdr);
+    return gdl;
 }
 
 std::ostream& operator<<(std::ostream& os, const GraphDistance::Distance& d) {
@@ -265,7 +274,7 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
         using namespace std::placeholders;
 
         auto    tget = std::bind(&Lines::getLeaveTime, &this->lines_, day, _1, _2, _3, _4);
-        return ::combine(gd, section, arrive_compare, tget, adjust);
+        return ::combine(gd, section, arrive_compare, tget, adjust, minusInf);
     };
 
     auto    edger = boost::edges(graph_);
@@ -277,18 +286,20 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     Visitor vis(d,w);
     auto    u = stopMap_[to];
     adjustDelay = delay;
-    boost::dijkstra_shortest_paths(
-        graph_,
-        u,
-        boost::predecessor_map(boost::associative_property_map<PredecessorMap>(p)).
-            distance_map(boost::associative_property_map<DistanceMap>(d)).
-            weight_map(boost::associative_property_map<WeightMap>(w)).
-            distance_compare(compare).
-            distance_combine(combine).
-            distance_zero(GraphDistance{arriveBy}).
-            distance_inf(GraphDistance{}).
-            visitor(vis));
+//    boost::dijkstra_shortest_paths(
+//        graph_,
+//        u,
+//        boost::predecessor_map(boost::associative_property_map<PredecessorMap>(p)).
+//            distance_map(boost::associative_property_map<DistanceMap>(d)).
+//            weight_map(boost::associative_property_map<WeightMap>(w)).
+//            distance_compare(compare).
+//            distance_combine(combine).
+//            distance_zero(GraphDistance{arriveBy}).
+//            distance_inf(GraphDistance{}).
+//            visitor(vis));
 
+    mod_dijkstra_shortest_path(
+        graph_, u, w, d, compare, combine, assign, GraphDistance{arriveBy}, GraphDistance{}, vis);
 //    auto    edge_list = [this](VertexDesc u, VertexDesc v) {
 //        std::vector<EdgeDesc>   rv;
 //        auto                    er = boost::out_edges(u, graph_);
@@ -317,13 +328,13 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
         const auto& dv = d.at(stopMap_[stop]).at(routeid);
         auto        time = dv.time;
         const auto& platform = lines_.getPlatform(routeid, stop);
-        auto        routeid = dv.routeid;
         auto        nextStop = lines_.getNextStop(routeid, stop);
         auto        arrive = lines_.getArriveTime(day, routeid, stop, time, nextStop);
         const auto& nextPlatform = lines_.getPlatform(routeid, nextStop);
 
         rv.push_back(Node{{stop, time, platform}, {nextStop, arrive, nextPlatform}, routeid});
 
+        routeid = dv.routeid;
         stop = nextStop;
     }
 
