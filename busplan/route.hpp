@@ -66,7 +66,11 @@ public:
     }
 
     const Stop& getNextStop(const Stop& stop) const {
-        return *std::next(std::find(stops_.cbegin(), stops_.cend(), stop));
+        auto    nextIt = std::next(std::find(stops_.cbegin(), stops_.cend(), stop));
+        while (*nextIt == stop) {
+            ++nextIt;
+        }
+        return *nextIt;
     }
 
     TimeLine getStopTimes(Day day, const Stop& stop) const {
