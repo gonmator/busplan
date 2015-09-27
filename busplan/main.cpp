@@ -127,13 +127,15 @@ int main(int argc, char *argv[])
     if (!fromStop.empty()) {
         fromStop = checkStop(stopdescs, fromStop);
         if (fromStop.empty()) {
-            std::cerr << "invalid from stop" << std::endl;
+            std::cerr << "invalid 'from'' stop" << std::endl;
+            return 3;
         }
     }
     if (!toStop.empty()) {
         toStop = checkStop(stopdescs, toStop);
         if (toStop.empty()) {
-            std::cerr << "invalid to stop" << std::endl;
+            std::cerr << "invalid 'to'' stop" << std::endl;
+            return 3;
         }
     }
 
