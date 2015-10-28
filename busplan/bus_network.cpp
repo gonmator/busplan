@@ -216,7 +216,6 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
         Visitor(const DistanceMap& dis, const WeightMap& wei): log(Logger{}.log("debug")), d(dis), w(wei) {}
 
         void initialize_vertex(VertexDesc u, const Graph& g) {
-            log << "initialize " << g[u] << std::endl;
         }
         void examine_vertex(VertexDesc u, const Graph& g) {
             log << "examine " << g[u] << std::endl;
