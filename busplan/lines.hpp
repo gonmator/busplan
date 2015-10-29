@@ -9,10 +9,10 @@
 #include "line.hpp"
 #include "routeid.hpp"
 #include "stop.hpp"
-#include "time_for_route.hpp"
+#include "time_step.hpp"
 #include "walking.hpp"
 
-using StepsByLine = std::pair<LineName, StepsRoutes>;
+using StepsByLine = std::pair<LineName, RouteNameSegmentsList>;
 using StepsLines = std::vector<StepsByLine>;
 
 
@@ -28,7 +28,7 @@ public:
         lines_.erase(lines_.find(lname));
     }
 
-    WalkingTimes& walkingTimes() {
+    WalkingSegmentTimes& walkingTimes() {
         return walkingTimes_;
     }
 
@@ -60,7 +60,7 @@ public:
     }
     TimeLine getStopTimes(Day day, const Stop& stop) const;
 
-    TimeForRoutes getStopTimesByRoute(Day day, const Stop& stop) const;
+    TimeSteps getStopTimesByRoute(Day day, const Stop& stop) const;
 
     Time getArriveTime(Day day, const RouteId& routeid, const Stop& from, Time leave, const Stop& to) const {
         if (routeid == walkingRouteId) {
@@ -74,7 +74,7 @@ public:
         }
         return lines_.at(routeid.linen).getLeaveTime(day, routeid.routen, from, to, arrive);
     }
-    TimeForRoutes getBoundArriveTimesByRoute(Day day, const Stop& to, Time arrive) const;
+    TimeSteps getBoundArriveTimesByRoute(Day day, const Stop& to, Time arrive) const;
 
     std::string getRouteDescription(const RouteId& routeid) const {
         if (routeid == walkingRouteId) {
@@ -88,7 +88,7 @@ public:
 
 private:
     std::map<LineName, Line>    lines_;
-    WalkingTimes                walkingTimes_;
+    WalkingSegmentTimes                walkingTimes_;
 };
 
 #endif // LINES_HPP

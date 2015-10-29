@@ -7,7 +7,7 @@
 
 #include "time_line.hpp"
 
-using StopTimes = std::vector<Time>;
+using Times = std::vector<Time>;
 
 class TimeTable {
 public:
@@ -28,7 +28,7 @@ public:
 
         return timeLines_[timeLineIndex];
     }
-    StopTimes getStopTimes(size_t stopIndex) const;
+    Times getStopTimes(size_t stopIndex) const;
 
     Time getTime(size_t timeLineIndex, size_t stopIndex) const {
         assert(timeLineIndex < timeLines_.size());

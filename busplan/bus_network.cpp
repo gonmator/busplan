@@ -26,14 +26,14 @@ inline DifTime adjust(const RouteId& rida, const RouteId& ridb) {
 
 class GraphDistance {
 public:
-    using Distances = std::map<RouteId, TimeForRoute>;
+    using Distances = std::map<RouteId, TimeStep>;
     using Distance = Distances::value_type;
 
     GraphDistance() = default;
     GraphDistance(const GraphDistance& gd) = default;
     GraphDistance(GraphDistance&& gd) = default;
-    explicit GraphDistance(const TimeForRoute& timeForRoute): distances_{} {
-        distances_[timeForRoute.routeid] = TimeForRoute{timeForRoute.time};
+    explicit GraphDistance(const TimeStep& timeForRoute): distances_{} {
+        distances_[timeForRoute.routeid] = TimeStep{timeForRoute.time};
     }
 
     GraphDistance& operator=(const GraphDistance& gd) {
@@ -56,10 +56,10 @@ public:
         }
     }
 
-    const TimeForRoute& at(const RouteId& routeid) const {
+    const TimeStep& at(const RouteId& routeid) const {
         return distances_.at(routeid);
     }
-    TimeForRoute& operator[](const RouteId& routeid) {
+    TimeStep& operator[](const RouteId& routeid) {
         return distances_[routeid];
     }
 
@@ -127,7 +127,7 @@ GraphDistance combine(
         }
         auto    rit = rv.find(section.routeid);
         if (rit == rv.cend() || tcomp(leave, rit->second.time)) {
-            rv[section.routeid] = TimeForRoute{d.first, leave};
+            rv[section.routeid] = TimeStep{d.first, leave};
         }
     }
     return rv;
@@ -196,11 +196,11 @@ BusNetwork::BusNetwork(Lines&& lines): lines_{std::move(lines)}, graph_{}, stopM
 BusNetwork::NodeList BusNetwork::planFromArrive(
     Day day, const Stop& from, const Stop& to, Time arrive, Details details, DifTime delay) {
 
-    return planFromArrive(day, from, to, TimeForRoute{arrive}, details, delay);
+    return planFromArrive(day, from, to, TimeStep{arrive}, details, delay);
 }
 
 BusNetwork::NodeList BusNetwork::planFromArrive(
-    Day day, const Stop& from, const Stop& to, TimeForRoute arriveBy, Details details, DifTime delay) {
+    Day day, const Stop& from, const Stop& to, TimeStep arriveBy, Details details, DifTime delay) {
 
     BusNetwork::NodeList    rv;
 

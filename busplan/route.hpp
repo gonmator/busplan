@@ -14,8 +14,8 @@
 #include "schedule.hpp"
 #include "stop.hpp"
 
-using Step = std::pair<Stop, Stop>;
-using Steps = std::vector<Step>;
+using Segment = std::pair<Stop, Stop>;
+using Segments = std::vector<Segment>;
 
 class Route {
 public:
@@ -42,10 +42,10 @@ public:
         return std::string{};
     }
 
-    Steps getForwardSteps() const {
+    Segments getForwardSteps() const {
         return getSteps(stops_.cbegin(), stops_.cend());
     }
-    Steps getBackwardSteps() const {
+    Segments getBackwardSteps() const {
         return getSteps(stops_.crbegin(), stops_.crend());
     }
 
@@ -92,8 +92,8 @@ public:
 
 private:
     template <typename InputIt>
-    static Steps getSteps(InputIt first, InputIt last) {
-        Steps   rv;
+    static Segments getSteps(InputIt first, InputIt last) {
+        Segments   rv;
         setPairs(first, last, std::back_inserter(rv));
         return rv;
     }

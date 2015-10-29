@@ -11,16 +11,16 @@ StopSet Line::getStopSet() const {
     return rv;
 }
 
-StepsRoutes Line::getForwardStepsRoutes() const {
-    StepsRoutes rv;
+RouteNameSegmentsList Line::getForwardStepsRoutes() const {
+    RouteNameSegmentsList rv;
     for (const auto& routep: routes_) {
         rv.emplace_back(routep.first, std::move(routep.second.getForwardSteps()));
     }
     return rv;
 }
 
-StepsRoutes Line::getBackwardStepsRoutes() const {
-    StepsRoutes rv;
+RouteNameSegmentsList Line::getBackwardStepsRoutes() const {
+    RouteNameSegmentsList rv;
     for (const auto& routep: routes_) {
         rv.emplace_back(routep.first, std::move(routep.second.getBackwardSteps()));
     }
@@ -43,8 +43,8 @@ TimeLine Line::getStopTimes(Day day, const Stop& stop) const {
     return rv;
 }
 
-TimesByRouteName Line::getStopTimesByRouteName(Day day, const Stop& stop) const {
-    TimesByRouteName    rv;
+RouteNameTimeList Line::getStopTimesByRouteName(Day day, const Stop& stop) const {
+    RouteNameTimeList    rv;
 
     for (const auto& routep: routes_) {
         try {
@@ -60,8 +60,8 @@ TimesByRouteName Line::getStopTimesByRouteName(Day day, const Stop& stop) const 
     return rv;
 }
 
-TimesByRouteName Line::getBoundArriveTimesByRouteName(Day day, const Stop& to, Time arrive) const {
-    TimesByRouteName    rv;
+RouteNameTimeList Line::getBoundArriveTimesByRouteName(Day day, const Stop& to, Time arrive) const {
+    RouteNameTimeList    rv;
 
     for (const auto& routep: routes_) {
         try {

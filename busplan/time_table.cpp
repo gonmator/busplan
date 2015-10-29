@@ -56,7 +56,7 @@ void TimeTable::addTimeLine(TimeLine timeLine) {
 }
 
 
-StopTimes TimeTable::getStopTimes(size_t stopIndex) const {
+Times TimeTable::getStopTimes(size_t stopIndex) const {
     assert(stopIndex < stopCount_);
 
     TimeLine    stopTimes;

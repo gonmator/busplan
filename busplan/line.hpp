@@ -10,10 +10,10 @@
 #include "route.hpp"
 #include "routeid.hpp"
 
-using StepsByRoute = std::pair<RouteName, Steps>;
-using StepsRoutes = std::vector<StepsByRoute>;
-using TimesByRouteName = std::vector<std::pair<RouteName, Time>>;
-using TimeByRouteName = TimesByRouteName::value_type;
+using RouteNameSegments = std::pair<RouteName, Segments>;
+using RouteNameSegmentsList = std::vector<RouteNameSegments>;
+using RouteNameTimeList = std::vector<std::pair<RouteName, Time>>;
+using RouteNameTime = RouteNameTimeList::value_type;
 
 class Line {
 public:
@@ -31,8 +31,8 @@ public:
         return routes_.at(routen).getPlatform(stop);
     }
     StopSet getStopSet() const;
-    StepsRoutes getForwardStepsRoutes() const;
-    StepsRoutes getBackwardStepsRoutes() const;
+    RouteNameSegmentsList getForwardStepsRoutes() const;
+    RouteNameSegmentsList getBackwardStepsRoutes() const;
     TimeLine getStopTimes(Day day, const RouteName& routen, const Stop& stop) const {
         return routes_.at(routen).getStopTimes(day, stop);
     }
@@ -42,7 +42,7 @@ public:
     }
 
     TimeLine getStopTimes(Day day, const Stop& stop) const;
-    TimesByRouteName getStopTimesByRouteName(Day day, const Stop& stop) const;
+    RouteNameTimeList getStopTimesByRouteName(Day day, const Stop& stop) const;
 
     Time getArriveTime(Day day, const RouteName& routen, const Stop& from, Time leave, const Stop& to) const {
         return routes_.at(routen).getArriveTime(day, from, leave, to);
@@ -50,7 +50,7 @@ public:
     Time getLeaveTime(Day day, const RouteName& routen, const Stop& from, const Stop& to, Time leave) const {
         return routes_.at(routen).getLeaveTime(day, from, to, leave);
     }
-    TimesByRouteName getBoundArriveTimesByRouteName(Day day, const Stop& to, Time arrive) const;
+    RouteNameTimeList getBoundArriveTimesByRouteName(Day day, const Stop& to, Time arrive) const;
     std::string getRouteDescription(const RouteName& routen) const {
         return routes_.at(routen).description();
     }

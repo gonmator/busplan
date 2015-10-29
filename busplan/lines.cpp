@@ -44,8 +44,8 @@ TimeLine Lines::getStopTimes(Day day, const Stop& stop) const {
     return rv;
 }
 
-TimeForRoutes Lines::getStopTimesByRoute(Day day, const Stop& stop) const {
-    TimeForRoutes    rv;
+TimeSteps Lines::getStopTimesByRoute(Day day, const Stop& stop) const {
+    TimeSteps    rv;
     for (const auto& linep: lines_) {
         auto    timesByRouteName = linep.second.getStopTimesByRouteName(day, stop);
         for (const auto& timeByRouteName: timesByRouteName) {
@@ -58,8 +58,8 @@ TimeForRoutes Lines::getStopTimesByRoute(Day day, const Stop& stop) const {
     return rv;
 }
 
-TimeForRoutes Lines::getBoundArriveTimesByRoute(Day day, const Stop& to, Time arrive) const {
-    TimeForRoutes    rv;
+TimeSteps Lines::getBoundArriveTimesByRoute(Day day, const Stop& to, Time arrive) const {
+    TimeSteps    rv;
     for (const auto& linep: lines_) {
         auto    timesByRouteName = linep.second.getBoundArriveTimesByRouteName(day, to, arrive);
         for (const auto& timeByRouteName: timesByRouteName) {

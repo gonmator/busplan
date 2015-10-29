@@ -13,7 +13,7 @@ void read(const Utility::IniDoc::Doc&, const std::string&, Route&, const StopDes
 void readPlatforms(const Utility::IniDoc::Doc&, const std::string&, Route&);
 void read(const Utility::IniDoc::Doc&, const std::string&, const Stops&, DifTimeLines&dtlines);
 void read(const Utility::IniDoc::Doc&, const std::string&, const Stops&, const DifTimeLines&, Schedule&);
-void read(const Utility::IniDoc::Doc& cfg, WalkingTimes& wt);
+void read(const Utility::IniDoc::Doc& cfg, WalkingSegmentTimes& wt);
 
 inline std::string strip(std::string str) {
     char    c = ' ';
@@ -185,7 +185,7 @@ void read(
     }
 }
 
-void read(const Utility::IniDoc::Doc& cfg, WalkingTimes& wt) {
+void read(const Utility::IniDoc::Doc& cfg, WalkingSegmentTimes& wt) {
     const auto wsectionIt = cfg.find("walking");
     if (wsectionIt == cfg.cend()) {
         return ;

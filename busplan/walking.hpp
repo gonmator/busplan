@@ -7,24 +7,24 @@
 #include "stop.hpp"
 #include "time.hpp"
 
-struct WalkingStep: std::pair<Stop, Stop> {
-    WalkingStep(const Stop& pointA, const Stop& pointB): std::pair<Stop, Stop>(
+struct WalkingSegment: std::pair<Stop, Stop> {
+    WalkingSegment(const Stop& pointA, const Stop& pointB): std::pair<Stop, Stop>(
         pointA < pointB ? pointA: pointB, pointA < pointB ? pointB: pointA) {
     }
     template <class U>
-    WalkingStep(U&& pointA, U&& pointB): std::pair<Stop, Stop>(
+    WalkingSegment(U&& pointA, U&& pointB): std::pair<Stop, Stop>(
         std::forward<U>(pointA < pointB ? pointA: pointB), std::forward<U>(pointA < pointB ? pointB: pointA)) {
     }
 };
 
-using WalkingTimes = std::map<WalkingStep, DifTime>;
+using WalkingSegmentTimes = std::map<WalkingSegment, DifTime>;
 
-inline Time getArriveTime(const WalkingTimes& walkingTimes, const Stop& from, Time leave, const Stop& to) {
-    return leave + walkingTimes.at(WalkingStep{from, to});
+inline Time getArriveTime(const WalkingSegmentTimes& walkingTimes, const Stop& from, Time leave, const Stop& to) {
+    return leave + walkingTimes.at(WalkingSegment{from, to});
 }
 
-inline Time getLeaveTime(const WalkingTimes& walkingTimes, const Stop& from, const Stop& to, Time arrive) {
-    return arrive - walkingTimes.at(WalkingStep{from, to});
+inline Time getLeaveTime(const WalkingSegmentTimes& walkingTimes, const Stop& from, const Stop& to, Time arrive) {
+    return arrive - walkingTimes.at(WalkingSegment{from, to});
 }
 
 
