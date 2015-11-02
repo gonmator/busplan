@@ -23,19 +23,27 @@ inline DifTime adjust(const RouteId& rida, const RouteId& ridb) {
     return adjustDelay;
 }
 
+struct Point {
+    Stop    stop;
+    Time    time;
+};
+
+struct Step {
+    Point   point;
+    RouteId routeId;
+};
 
 class GraphDistance {
 public:
-    using Distances = std::map<RouteId, TimeStep>;
+    using Distances = std::map<RouteId, Step>;
     using Distance = Distances::value_type;
 
     GraphDistance() = default;
     GraphDistance(const GraphDistance& gd) = default;
     GraphDistance(GraphDistance&& gd) = default;
-    explicit GraphDistance(const TimeStep& timeForRoute): distances_{} {
-        distances_[timeForRoute.routeid] = TimeStep{timeForRoute.time};
+    explicit GraphDistance(const Step& step): distances_{} {
+        distances_[step.routeId] = Step{step.point, RouteId{}};
     }
-
     GraphDistance& operator=(const GraphDistance& gd) {
         assign(gd);
         return *this;
@@ -56,10 +64,10 @@ public:
         }
     }
 
-    const TimeStep& at(const RouteId& routeid) const {
+    const Step& at(const RouteId& routeid) const {
         return distances_.at(routeid);
     }
-    TimeStep& operator[](const RouteId& routeid) {
+    Step& operator[](const RouteId& routeid) {
         return distances_[routeid];
     }
 
@@ -107,7 +115,7 @@ bool compare(const GraphDistance& gd1, const GraphDistance& gd2, TCompare tcomp)
         if (it2 == gd2.cend()) {
             return true;
         }
-        if (tcomp(d1.second.time, it2->second.time)) {
+        if (tcomp(d1.second.point.time, it2->second.point.time)) {
             return true;
         }
     }
@@ -120,14 +128,14 @@ GraphDistance combine(
 
     GraphDistance   rv;
     for (const auto& d: gd) {
-        auto    arrive = d.second.time - tadjust(d.first, section.routeid);
+        auto    arrive = d.second.point.time - tadjust(d.first, section.routeid);
         auto    leave = tget(section.routeid, section.from, section.to, arrive);
         if (leave == infinite) {
             continue;
         }
         auto    rit = rv.find(section.routeid);
-        if (rit == rv.cend() || tcomp(leave, rit->second.time)) {
-            rv[section.routeid] = TimeStep{d.first, leave};
+        if (rit == rv.cend() || tcomp(leave, rit->second.point.time)) {
+            rv[section.routeid] = Step{{section.to, leave}, d.first};
         }
     }
     return rv;
@@ -139,7 +147,8 @@ inline GraphDistance& assign(GraphDistance& gdl, const GraphDistance& gdr) {
 }
 
 std::ostream& operator<<(std::ostream& os, const GraphDistance::Distance& d) {
-    os << d.first << " (time: " << toString(d.second.time) << ", through: " << d.second.routeid << ")";
+    os << d.first << " (time: " << toString(d.second.point.time) << ", through: " << d.second.routeId;
+    os << ", to: " << d.second.point.stop << ")";
     return os;
 }
 
@@ -271,15 +280,16 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     auto    u = stopMap_[to];
     adjustDelay = delay;
 
+    Step    step{Point{Stop{}, arriveBy.time}, arriveBy.routeid};
     mod_dijkstra_shortest_path(
-        graph_, u, w, d, compare, combine, assign, GraphDistance{arriveBy}, GraphDistance{}, vis);
+        graph_, u, w, d, compare, combine, assign, GraphDistance{step}, GraphDistance{}, vis);
 
     Stop        stop = from;
     const auto& dv = d.at(stopMap_[stop]);
     auto        it = std::min_element(
         dv.cbegin(), dv.cend(), [](const GraphDistance::Distance& d1, const GraphDistance::Distance& d2) {
 
-        return ::arrive_compare(d1.second.time, d2.second.time);
+        return ::arrive_compare(d1.second.point.time, d2.second.point.time);
     });
     if (it == dv.cend()) {
         return rv;
@@ -287,15 +297,15 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
     auto    routeid = it->first;
     while (stop != to) {
         const auto& dv = d.at(stopMap_[stop]).at(routeid);
-        auto        time = dv.time;
+        auto        time = dv.point.time;
         const auto& platform = lines_.getPlatform(routeid, stop);
-        auto        nextStop = lines_.getNextStop(routeid, stop);
+        auto        nextStop = dv.point.stop;
         auto        arrive = lines_.getArriveTime(day, routeid, stop, time, nextStop);
         const auto& nextPlatform = lines_.getPlatform(routeid, nextStop);
 
         rv.push_back(Node{{stop, time, platform}, {nextStop, arrive, nextPlatform}, routeid});
 
-        routeid = dv.routeid;
+        routeid = dv.routeId;
         stop = nextStop;
     }
 
