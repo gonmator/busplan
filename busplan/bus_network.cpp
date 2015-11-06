@@ -320,19 +320,20 @@ BusNetwork::NodeList BusNetwork::planFromArrive(
 
 BusNetwork::Table BusNetwork::table(Day day, const Stop& from, const Stop& to, Details details, DifTime delay) {
     Table   rv;
-    auto    timeline = lines_.getStopTimesByRoute(day, to);
+    auto    timeline = lines_.getStopTimes(day, to);
     Time    lastLeave{minusInf};
     Time    lastArrive{plusInf};
-    for (const auto& timeByRoute: timeline) {
-        auto    nlist = planFromArrive(day, from, to, timeByRoute, details, delay);
+    for (const auto& time: timeline) {
+        std::cout << toString(time) << " ";
+        auto    nlist = planFromArrive(day, from, to, time + delay, details, delay);
         if (!nlist.empty()) {
-//            auto    leave = nlist.front().from.time;
-//            auto    arrive = nlist.back().to.time;
-//            if (leave > lastLeave || arrive == lastArrive) {
+            auto    leave = nlist.front().from.time;
+            auto    arrive = nlist.back().to.time;
+            if (leave > lastLeave || arrive == lastArrive) {
                 rv.push_back(nlist);
-//                lastLeave = leave;
-//                lastArrive = arrive;
-//            }
+                lastLeave = leave;
+                lastArrive = arrive;
+            }
         }
     }
 
