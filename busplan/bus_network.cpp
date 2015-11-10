@@ -324,7 +324,6 @@ BusNetwork::Table BusNetwork::table(Day day, const Stop& from, const Stop& to, D
     Time    lastLeave{minusInf};
     Time    lastArrive{plusInf};
     for (const auto& time: timeline) {
-        std::cout << toString(time) << " ";
         auto    nlist = planFromArrive(day, from, to, time + delay, details, delay);
         if (!nlist.empty()) {
             auto    leave = nlist.front().from.time;

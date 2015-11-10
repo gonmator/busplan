@@ -16,7 +16,7 @@ using StepsByLine = std::pair<LineName, RouteNameSegmentsList>;
 using StepsLines = std::vector<StepsByLine>;
 
 
-const RouteId   walkingRouteId{"__walking__", "__"};
+const RouteId   walkingRouteId{"walking", "__"};
 
 
 class Lines {
@@ -40,7 +40,7 @@ public:
     }
     std::string getPlatform(const RouteId& routeid, const Stop& stop) const {
         if (routeid == walkingRouteId) {
-            return "walking";
+            return std::string{};
         }
         return lines_.at(routeid.linen).getPlatform(routeid.routen, stop);
     }
@@ -78,17 +78,17 @@ public:
 
     std::string getRouteDescription(const RouteId& routeid) const {
         if (routeid == walkingRouteId) {
-            return "(walking)";
+            return std::string{};
         }
         if (routeid.linen.empty()) {
-            return "";
+            return std::string{};
         }
         return lines_.at(routeid.linen).getRouteDescription(routeid.routen);
     }
 
 private:
     std::map<LineName, Line>    lines_;
-    WalkingSegmentTimes                walkingTimes_;
+    WalkingSegmentTimes         walkingTimes_;
 };
 
 #endif // LINES_HPP
