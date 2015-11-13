@@ -37,15 +37,17 @@ TimeLine Lines::getStopTimes(Day day, const Stop& stop) const {
         auto    tl = linep.second.getStopTimes(day, stop);
         rv.insert(rv.end(), tl.cbegin(), tl.cend());
     }
-    auto    segmentTimes = getSegmentTimes(wakingTimes_, stop);
+    auto    segmentTimes = getSegmentTimes(walkingTimes_, stop);
     for (const auto& segmentTime: segmentTimes) {
         auto    next = stop == segmentTime.first.first ? segmentTime.first.second : segmentTime.first.first;
         auto    difTime = segmentTime.second;
-        auto    times = getStopTimes(day, next);
-        for (auto& time: times) {
-            time += difTime;
+        for (const auto& linep: lines_) {
+            auto    tl = linep.second.getStopTimes(day, next);
+            for (auto& time: tl) {
+                time += difTime;
+            }
+            rv.insert(rv.end(), tl.cbegin(), tl.cend());
         }
-        rv.insert(rv.end(), times.cbegin(), times.cend());
     }
 
     std::sort(rv.begin(), rv.end());

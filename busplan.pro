@@ -56,7 +56,6 @@ OTHER_FILES += \
     networks/lux/old.avl.lines.cfg \
     networks/lux/avl.lines.cfg \
     networks/lux/27.cfg \
-    networks/busplan.cfg \
     networks/lux/18.cfg \
     networks/lux/26.cfg \
     networks/lux/13.cfg \
