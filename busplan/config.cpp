@@ -121,7 +121,12 @@ void readPlatforms(const Utility::IniDoc::Doc& cfg, const std::string& sname, Ro
             const auto& pstr = pprop.second.string();
         //        std::cout << "            " << pprop.first << " -> " << pstr << std::endl;
 
-            route.addPlatform(pprop.first, pstr);
+            try {
+                route.addPlatform(pprop.first, pstr);
+            } catch(const std::out_of_range& e) {
+                std::cerr << pprop.first << " is not a valid stop for route " << route.description() << ".";
+                std::cerr << "Skipping platform." << std::endl;
+            }
         }
     }
 }

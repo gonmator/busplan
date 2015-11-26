@@ -61,8 +61,11 @@ public:
         return stops_.back();
     }
     void addPlatform(const std::string& sstr, const std::string& pstr) {
-        const auto& stop = *std::find(stops_.cbegin(), stops_.cend(), sstr);
-        platforms_[stop] = pstr;
+        auto    stopIt = std::find(stops_.cbegin(), stops_.cend(), sstr);
+        if (stopIt == stops_.cend()) {
+            throw std::out_of_range{"invalid platform"};
+        }
+        platforms_[*stopIt] = pstr;
     }
 
     const Stop& getNextStop(const Stop& stop) const {
